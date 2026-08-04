@@ -122,6 +122,7 @@ local function loadConfig()
 end
 
 local function saveConfig()
+	config.version = VERSION
 	config.settings = config.settings or {}
 	config.advert = config.advert or {}
 
