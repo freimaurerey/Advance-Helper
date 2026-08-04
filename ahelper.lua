@@ -282,6 +282,11 @@ end
 
 local function checkForUpdates()
     lua_thread.create(function()
+		sampAddChatMessage(
+			"{4A90E2}[Advance Helper] Проверка обновлений..",
+			-1
+		)
+			
         local ok, response = pcall(requests.get, UPDATE_URL)
 
         if not ok or not response or response.status_code ~= 200 then
@@ -305,20 +310,20 @@ local function checkForUpdates()
 		end
 
         sampAddChatMessage(
-            string.format(
-                "{4A90E2}[Advance Helper]{FFFFFF} Найдено обновление {00CC66}%s{FFFFFF}. Загрузка...",
-                data.version
-            ),
-            -1
-        )
+		    string.format(
+		        "{4A90E2}[Advance Helper] Доступна новая версия: {FFFFFF}%s{4A90E2}. Загрузка обновления..",
+		        data.version
+		    ),
+		    -1
+		)
 
         local ok2, script = pcall(requests.get, data.script)
 
         if not ok2 or not script or script.status_code ~= 200 then
             sampAddChatMessage(
-                "{FF4444}[Advance Helper]{FFFFFF} Не удалось скачать обновление.",
-                -1
-            )
+			    "{4A90E2}[Advance Helper] Не удалось загрузить обновление",
+			    -1
+			)
             return
         end
 
@@ -326,9 +331,9 @@ local function checkForUpdates()
 
         if not file then
             sampAddChatMessage(
-                "{FF4444}[Advance Helper]{FFFFFF} Не удалось открыть файл скрипта.",
-                -1
-            )
+			    "{4A90E2}[Advance Helper] Не удалось открыть файл скрипта для обновления",
+			    -1
+			)
             return
         end
 
@@ -340,9 +345,9 @@ local function checkForUpdates()
 
         if data.changelog then
             sampAddChatMessage(
-                "{4A90E2}[Advance Helper]{FFFFFF} Что нового:",
-                -1
-            )
+			    "{4A90E2}[Advance Helper] Список изменений:",
+			    -1
+			)
 
             for _, change in ipairs(data.changelog) do
                 sampAddChatMessage(
@@ -353,9 +358,12 @@ local function checkForUpdates()
         end
 
         sampAddChatMessage(
-            "{00CC66}[Advance Helper]{FFFFFF} Скрипт обновлен. Перезагрузка...",
-            -1
-        )
+		    string.format(
+		        "{4A90E2}[Advance Helper] Обновление до версии {FFFFFF}%s{4A90E2} успешно установлено",
+		        data.version
+		    ),
+		    -1
+		)
 
         wait(1000)
         thisScript():reload()
@@ -393,7 +401,7 @@ function main()
 
         sampAddChatMessage(
             string.format(
-                "{4A90E2}[Advance Helper]{FFFFFF} %s.",
+                "{4A90E2}[Advance Helper]{FFFFFF} %s",
                 helperEnabled and "{00CC66}Активирован{FFFFFF}" or "{FF4444}Деактивирован{FFFFFF}"
             ),
             -1
@@ -480,7 +488,7 @@ function main()
 
 					sampAddChatMessage(
 						string.format(
-							"{4A90E2}[Advance Helper]{FFFFFF} %s.",
+							"{4A90E2}[Advance Helper]{FFFFFF} %s",
 							helperEnabled and "{00CC66}Активирован{FFFFFF}" or "{FF4444}Деактивирован{FFFFFF}"
 						),
 						-1
@@ -493,7 +501,7 @@ function main()
 
 					sampAddChatMessage(
 						string.format(
-							"{4A90E2}[Advance Helper]{FFFFFF} Автопринятие ремонта %s.",
+							"{4A90E2}[Advance Helper]{FFFFFF} Автопринятие ремонта %s",
 							repairEnabled and "{00CC66}включено{FFFFFF}" or "{FF4444}выключено{FFFFFF}"
 						),
 						-1
@@ -506,7 +514,7 @@ function main()
 
 					sampAddChatMessage(
 						string.format(
-							"{4A90E2}[Advance Helper]{FFFFFF} Автопринятие заправки %s.",
+							"{4A90E2}[Advance Helper]{FFFFFF} Автопринятие заправки %s",
 							fuelEnabled and "{00CC66}включено{FFFFFF}" or "{FF4444}выключено{FFFFFF}"
 						),
 						-1
@@ -516,7 +524,7 @@ function main()
 					sampShowDialog(
 						DIALOG_MASK_SKIN,
 						"Скин после маски",
-						"Введите ID скина.\n\nЕсли оставить поле пустым, функция будет отключена.",
+						"Введите ID скина.\n\nЕсли оставить поле пустым, функция будет отключена",
 						"Сохранить",
 						"Отмена",
 						DIALOG_STYLE_INPUT
@@ -550,7 +558,7 @@ function main()
 
 					sampAddChatMessage(
 						string.format(
-							"{4A90E2}[Advance Helper]{FFFFFF} Запрос цветов %s.",
+							"{4A90E2}[Advance Helper]{FFFFFF} Запрос цветов %s",
 							flowersEnabled and "{00CC66}включен{FFFFFF}" or "{FF4444}выключен{FFFFFF}"
 						),
 						-1
@@ -579,7 +587,7 @@ function main()
 
 					sampAddChatMessage(
 						string.format(
-							"{4A90E2}[Advance Helper]{FFFFFF} Рассылка %s.",
+							"{4A90E2}[Advance Helper]{FFFFFF} Рассылка %s",
 							advertEnabled and "{00CC66}включена{FFFFFF}" or "{FF4444}выключена{FFFFFF}"
 						),
 						-1
@@ -626,7 +634,7 @@ function main()
 					sampShowDialog(
 						DIALOG_NICK,
 						"Ник для рассылки",
-						"Введите ник персонажа.\n\nЕсли оставить поле пустым, рассылка будет работать на любом персонаже.",
+						"Введите ник персонажа.\n\nЕсли оставить поле пустым, рассылка будет работать на любом персонаже",
 						"Сохранить",
 						"Отмена",
 						DIALOG_STYLE_INPUT
@@ -647,7 +655,7 @@ function main()
 					sampShowDialog(
 						DIALOG_TIME,
 						"Время",
-						"Введите час (0-23).\n\nЕсли оставить поле пустым, будет использоваться серверное время.",
+						"Введите час (0-23).\n\nЕсли оставить поле пустым, будет использоваться серверное время",
 						"Сохранить",
 						"Отмена",
 						DIALOG_STYLE_INPUT
@@ -657,7 +665,7 @@ function main()
 					sampShowDialog(
 						DIALOG_WEATHER,
 						"Погода",
-						"Введите ID погоды (0-255).\n\nЕсли оставить поле пустым, будет использоваться серверная погода.",
+						"Введите ID погоды (0-255).\n\nЕсли оставить поле пустым, будет использоваться серверная погода",
 						"Сохранить",
 						"Отмена",
 						DIALOG_STYLE_INPUT
@@ -736,7 +744,7 @@ function main()
 
 				sampAddChatMessage(
 					string.format(
-						"{4A90E2}[Advance Helper]{FFFFFF} Сообщения для {4A90E2}%02d{FFFFFF} минут сохранены.",
+						"{4A90E2}[Advance Helper]{FFFFFF} Сообщения для {4A90E2}%02d{FFFFFF} минут сохранены",
 						selectedMinute
 					),
 					-1
@@ -757,7 +765,7 @@ function main()
 					maskSkinId = input
 				else
 					sampAddChatMessage(
-						"{4A90E2}[Advance Helper]{FFFFFF} ID скина должен быть числом.",
+						"{4A90E2}[Advance Helper]{FFFFFF} ID скина должен быть числом",
 						-1
 					)
 					goto continue
@@ -794,7 +802,7 @@ function main()
 					timeHour = input
 				else
 					sampAddChatMessage(
-						"{4A90E2}[Advance Helper]{FFFFFF} Введите число от 0 до 23.",
+						"{4A90E2}[Advance Helper]{FFFFFF} Введите число от 0 до 23",
 						-1
 					)
 					goto continue
@@ -818,7 +826,7 @@ function main()
 					weatherId = input
 				else
 					sampAddChatMessage(
-						"{4A90E2}[Advance Helper]{FFFFFF} Введите число от 0 до 255.",
+						"{4A90E2}[Advance Helper]{FFFFFF} Введите число от 0 до 255",
 						-1
 					)
 					goto continue2
