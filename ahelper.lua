@@ -403,7 +403,7 @@ function main()
     sampAddChatMessage(
         string.format(
             "{4A90E2}Advance Helper{FFFFFF} загружен. Текущая версия: {4A90E2}%s",
-            VERSION
+            config.version
         ),
         -1
     )
