@@ -2,7 +2,6 @@
     "version": "1.2",
     "script": "https://raw.githubusercontent.com/freimaurerey/Advance-Helper/main/ahelper.lua"
     "changelog": [
-        "test1",
-        "test2"
+        "test1"
     ]
 }
