@@ -50,15 +50,13 @@ local function join(tbl)
     return table.concat(tbl or {}, "|")
 end
 
-local VERSION = "1.2"
-
 local requests = require("requests")
 
 local UPDATE_URL = "https://raw.githubusercontent.com/freimaurerey/Advance-Helper/main/version.json"
 
 local function defaultConfig()
     return {
-		version = VERSION,
+		version = "unknown",
 	
         settings = {
             helper = true,
@@ -109,6 +107,7 @@ local function loadConfig()
 
     config = data
 
+	config.version = config.version or "unknown"
     config.settings = config.settings or {}
     config.advert = config.advert or {}
 
@@ -122,7 +121,6 @@ local function loadConfig()
 end
 
 local function saveConfig()
-	config.version = VERSION
 	config.settings = config.settings or {}
 	config.advert = config.advert or {}
 
@@ -223,7 +221,7 @@ local function showMenu()
 
     sampShowDialog(
         DIALOG_MENU,
-        string.format("{4A90E2}Advance Helper [%s]", VERSION),
+        string.format("{4A90E2}Advance Helper [%s]", config.version),
         text,
         "Изменить",
 		"Закрыть",
@@ -274,7 +272,7 @@ local function showForTasksMenu()
 
     sampShowDialog(
         DIALOG_FOR_TASKS,
-        string.format("{4A90E2}Возможности для заданий", VERSION),
+        string.format("{4A90E2}Возможности для заданий", config.version),
         text,
         "Изменить",
 		"Закрыть",
@@ -296,9 +294,15 @@ local function checkForUpdates()
             return
         end
 
-        if not data.version or data.version == VERSION then
-            return
-        end
+        if config.version == "unknown" then
+		    config.version = data.version
+		    saveConfig()
+		    return
+		end
+		
+		if data.version == config.version then
+		    return
+		end
 
         sampAddChatMessage(
             string.format(
