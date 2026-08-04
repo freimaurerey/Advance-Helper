@@ -1,3 +1,7 @@
+local encoding = require "encoding"
+encoding.default = "CP1251"
+u8 = encoding.UTF8
+
 script_name("Advance Helper")
 script_author("Louis_Montblanc")
 
@@ -47,6 +51,10 @@ local function join(tbl)
 end
 
 local VERSION = "1.0"
+
+local requests = require("requests")
+
+local UPDATE_URL = "https://raw.githubusercontent.com/freimaurerey/Advance-Helper/main/version.json"
 
 local function defaultConfig()
     return {
@@ -273,6 +281,79 @@ local function showForTasksMenu()
     )
 end
 
+local function checkForUpdates()
+    lua_thread.create(function()
+        local ok, response = pcall(requests.get, UPDATE_URL)
+
+        if not ok or not response or response.status_code ~= 200 then
+            return
+        end
+
+        local data, _, err = json.decode(response.text)
+
+        if err or type(data) ~= "table" then
+            return
+        end
+
+        if not data.version or data.version == VERSION then
+            return
+        end
+
+        sampAddChatMessage(
+            string.format(
+                "{4A90E2}[Advance Helper]{FFFFFF} Найдено обновление {00CC66}%s{FFFFFF}. Загрузка...",
+                data.version
+            ),
+            -1
+        )
+
+        local ok2, script = pcall(requests.get, data.script)
+
+        if not ok2 or not script or script.status_code ~= 200 then
+            sampAddChatMessage(
+                "{FF4444}[Advance Helper]{FFFFFF} Не удалось скачать обновление.",
+                -1
+            )
+            return
+        end
+
+        local file = io.open(thisScript().path, "wb")
+
+        if not file then
+            sampAddChatMessage(
+                "{FF4444}[Advance Helper]{FFFFFF} Не удалось открыть файл скрипта.",
+                -1
+            )
+            return
+        end
+
+        file:write(u8:decode(script.text))
+		file:close()
+
+        if data.changelog then
+            sampAddChatMessage(
+                "{4A90E2}[Advance Helper]{FFFFFF} Что нового:",
+                -1
+            )
+
+            for _, change in ipairs(data.changelog) do
+                sampAddChatMessage(
+                    "{C8C8C8}• " .. tostring(change),
+                    -1
+                )
+            end
+        end
+
+        sampAddChatMessage(
+            "{00CC66}[Advance Helper]{FFFFFF} Скрипт обновлен. Перезагрузка...",
+            -1
+        )
+
+        wait(1000)
+        thisScript():reload()
+    end)
+end
+
 function onScriptTerminate(script, quitGame)
     if script ~= thisScript() then
         return
@@ -289,6 +370,8 @@ function main()
 	until isSampAvailable()
 
 	wait(500)
+
+	checkForUpdates()
 
 	if sampIsDialogActive() then
 		sampCloseCurrentDialogWithButton(0)
