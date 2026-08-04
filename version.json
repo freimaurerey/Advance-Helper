@@ -1,7 +1,7 @@
 {
-    "version": "1.2",
+    "version": "1.2.1",
     "script": "https://raw.githubusercontent.com/freimaurerey/Advance-Helper/main/ahelper.lua"
     "changelog": [
-        "test1"
+        "fix version start"
     ]
 }
