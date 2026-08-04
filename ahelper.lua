@@ -330,6 +330,9 @@ local function checkForUpdates()
         file:write(u8:decode(script.text))
 		file:close()
 
+		config.version = data.version
+		saveConfig()
+
         if data.changelog then
             sampAddChatMessage(
                 "{4A90E2}[Advance Helper]{FFFFFF} Что нового:",
