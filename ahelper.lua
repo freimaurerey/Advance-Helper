@@ -196,82 +196,79 @@ local function patchSampTime(enable)
 end
 
 local function status(v)
-    return v and "{00CC66}ВКЛ" or "{FF4444}ВЫКЛ"
+    return v and "{00CC66}Р’РљР›" or "{FF4444}Р’Р«РљР›"
 end
 
 local function showMenu()
 	local text = table.concat({
-        "{4A90E2}Параметр\tСостояние",
-        "Advance Helper\t" .. status(helperEnabled),
-        "{4A90E2}Возможности:",
-        "Автопринятие ремонта (1$)\t" .. status(repairEnabled),
-        "Автопринятие заправки (1 л)\t" .. status(fuelEnabled),
-		"Скин после маски (VIP)\t" .. (maskSkinId ~= "" and "{4A90E2}" .. maskSkinId or "{FF4444}ВЫКЛ"),
-		"{4A90E2}Возможности для заданий (/tasks)\t{4A90E2}>>>",
-		"{4A90E2}Управление рассылкой\t{4A90E2}>>>",
-		"{4A90E2}Управление временем и погодой\t{4A90E2}>>>",
+        "{4A90E2}РџР°СЂР°РјРµС‚СЂ\tРЎРѕСЃС‚РѕСЏРЅРёРµ",
+		"Advance Helper\t" .. status(helperEnabled),
+        "{4A90E2}Р’РѕР·РјРѕР¶РЅРѕСЃС‚Рё:",
+		"РђРІС‚РѕРїСЂРёРЅСЏС‚РёРµ СЂРµРјРѕРЅС‚Р° (1$)\t" .. status(repairEnabled),
+		"РђРІС‚РѕРїСЂРёРЅСЏС‚РёРµ Р·Р°РїСЂР°РІРєРё (1 Р»)\t" .. status(fuelEnabled),
+		"РЎРєРёРЅ РїРѕСЃР»Рµ РјР°СЃРєРё (VIP)\t" .. (maskSkinId ~= "" and "{4A90E2}" .. maskSkinId or "{FF4444}Р’Р«РљР›"),
+		"{4A90E2}Р’РѕР·РјРѕР¶РЅРѕСЃС‚Рё РґР»СЏ Р·Р°РґР°РЅРёР№ (/tasks)\t{4A90E2}>>>",
+		"{4A90E2}РЈРїСЂР°РІР»РµРЅРёРµ СЂР°СЃСЃС‹Р»РєРѕР№\t{4A90E2}>>>",
+		"{4A90E2}РЈРїСЂР°РІР»РµРЅРёРµ РІСЂРµРјРµРЅРµРј Рё РїРѕРіРѕРґРѕР№\t{4A90E2}>>>",
     }, "\n")
 
     sampShowDialog(
         DIALOG_MENU,
         string.format("{4A90E2}Advance Helper [%s]", VERSION),
         text,
-        "Изменить",
-        "Закрыть",
+        "РР·РјРµРЅРёС‚СЊ",
+		"Р—Р°РєСЂС‹С‚СЊ",
         DIALOG_STYLE_TABLIST_HEADERS
     )
 end
 
 local function showAdvertMenu()
     local text = table.concat({
-        "{4A90E2}Параметр\tСостояние",
-        "Рассылка\t" .. status(advertEnabled),
-        "{4A90E2}Редактировать тексты\t{4A90E2}>>>",
-        "{808080}Никнейм\t" ..
-            (advertNick ~= "" and "{4A90E2}" .. advertNick or "{808080}Любой"),
+        "{4A90E2}РџР°СЂР°РјРµС‚СЂ\tРЎРѕСЃС‚РѕСЏРЅРёРµ",
+		"Р Р°СЃСЃС‹Р»РєР°\t" .. status(advertEnabled),
+		"{4A90E2}Р РµРґР°РєС‚РёСЂРѕРІР°С‚СЊ С‚РµРєСЃС‚С‹\t{4A90E2}>>>",
+		"{808080}РќРёРєРЅРµР№Рј\t" .. (advertNick ~= "" and "{4A90E2}" .. advertNick or "{808080}Р›СЋР±РѕР№"),
     }, "\n")
 
     sampShowDialog(
         DIALOG_ADVERT,
-        "{4A90E2}Управление рассылкой",
+        "{4A90E2}РЈРїСЂР°РІР»РµРЅРёРµ СЂР°СЃСЃС‹Р»РєРѕР№",
         text,
-        "Выбрать",
-        "Закрыть",
+        "Р’С‹Р±СЂР°С‚СЊ",
+		"Р—Р°РєСЂС‹С‚СЊ",
         DIALOG_STYLE_TABLIST_HEADERS
     )
 end
 
 local function showEnvironmentMenu()
     local text = table.concat({
-		"{4A90E2}Параметр\tСостояние",
-		"Время\t" ..
-			(timeHour ~= "" and "{4A90E2}" .. timeHour or "{FF4444}ВЫКЛ"),
-		"Погода\t" ..
-			(weatherId ~= "" and "{4A90E2}" .. weatherId or "{FF4444}ВЫКЛ"),
+		"{4A90E2}РџР°СЂР°РјРµС‚СЂ\tРЎРѕСЃС‚РѕСЏРЅРёРµ",
+		"Р’СЂРµРјСЏ\t" .. (timeHour ~= "" and "{4A90E2}" .. timeHour or "{FF4444}Р’Р«РљР›"),
+		"РџРѕРіРѕРґР°\t" .. (weatherId ~= "" and "{4A90E2}" .. weatherId or "{FF4444}Р’Р«РљР›"),
 	}, "\n")
 
 	sampShowDialog(
 		DIALOG_ENVIRONMENT,
-		"{4A90E2}Управление временем и погодой",
+		"{4A90E2}РЈРїСЂР°РІР»РµРЅРёРµ РІСЂРµРјРµРЅРµРј Рё РїРѕРіРѕРґРѕР№",
 		text,
-		"Выбрать",
-		"Закрыть",
+		"Р’С‹Р±СЂР°С‚СЊ",
+		"Р—Р°РєСЂС‹С‚СЊ",
 		DIALOG_STYLE_TABLIST_HEADERS
 	)
 end
 
 local function showForTasksMenu()
     local text = table.concat({
-        "{4A90E2}Параметр\tСостояние",
-		"Запрос цветов\t" .. status(flowersEnabled),
+        "{4A90E2}РџР°СЂР°РјРµС‚СЂ\tРЎРѕСЃС‚РѕСЏРЅРёРµ",
+		"Р—Р°РїСЂРѕСЃ С†РІРµС‚РѕРІ\t" .. status(flowersEnabled),
     }, "\n")
 
     sampShowDialog(
         DIALOG_FOR_TASKS,
-        string.format("{4A90E2}Возможности для заданий", VERSION),
+        string.format("{4A90E2}Р’РѕР·РјРѕР¶РЅРѕСЃС‚Рё РґР»СЏ Р·Р°РґР°РЅРёР№", VERSION),
         text,
-        "Изменить",
-        "Закрыть",
+        "РР·РјРµРЅРёС‚СЊ",
+		"Р—Р°РєСЂС‹С‚СЊ",
         DIALOG_STYLE_TABLIST_HEADERS
     )
 end
@@ -306,7 +303,7 @@ function main()
         sampAddChatMessage(
             string.format(
                 "{4A90E2}[Advance Helper]{FFFFFF} %s.",
-                helperEnabled and "{00CC66}Активирован{FFFFFF}" or "{FF4444}Деактивирован{FFFFFF}"
+                helperEnabled and "{00CC66}РђРєС‚РёРІРёСЂРѕРІР°РЅ{FFFFFF}" or "{FF4444}Р”РµР°РєС‚РёРІРёСЂРѕРІР°РЅ{FFFFFF}"
             ),
             -1
         )
@@ -314,39 +311,16 @@ function main()
 
     sampAddChatMessage(
         string.format(
-            "{4A90E2}Advance Helper{FFFFFF} загружен. Текущая версия: {4A90E2}%s",
+            "{4A90E2}Advance Helper{FFFFFF} Р·Р°РіСЂСѓР¶РµРЅ. РўРµРєСѓС‰Р°СЏ РІРµСЂСЃРёСЏ: {4A90E2}%s",
             VERSION
         ),
         -1
     )
 
     sampAddChatMessage(
-        "{C8C8C8}Для деактивации: {FFFFFF}/ah {C8C8C8}| Возможности: {FFFFFF}/ahelper",
+        "{C8C8C8}Р”Р»СЏ РґРµР°РєС‚РёРІР°С†РёРё: {FFFFFF}/ah {C8C8C8}| Р’РѕР·РјРѕР¶РЅРѕСЃС‚Рё: {FFFFFF}/ahelper",
         -1
     )
-	
-	lua_thread.create(function()
-		while true do
-			wait(0)
-
-			if timeHour ~= "" then
-				patchSampTime(true)
-				setTimeOfDay(tonumber(timeHour), 0)
-			else
-				patchSampTime(false)
-			end
-		end
-	end)
-	
-	lua_thread.create(function()
-		while true do
-			wait(1000)
-
-			if weatherId ~= "" then
-				forceWeatherNow(tonumber(weatherId))
-			end
-		end
-	end)
 	
 	lua_thread.create(function()
 		local lastMinute = -1
@@ -416,7 +390,7 @@ function main()
 					sampAddChatMessage(
 						string.format(
 							"{4A90E2}[Advance Helper]{FFFFFF} %s.",
-							helperEnabled and "{00CC66}Активирован{FFFFFF}" or "{FF4444}Деактивирован{FFFFFF}"
+							helperEnabled and "{00CC66}РђРєС‚РёРІРёСЂРѕРІР°РЅ{FFFFFF}" or "{FF4444}Р”РµР°РєС‚РёРІРёСЂРѕРІР°РЅ{FFFFFF}"
 						),
 						-1
 					)
@@ -428,8 +402,8 @@ function main()
 
 					sampAddChatMessage(
 						string.format(
-							"{4A90E2}[Advance Helper]{FFFFFF} Автопринятие ремонта %s.",
-							repairEnabled and "{00CC66}включено{FFFFFF}" or "{FF4444}выключено{FFFFFF}"
+							"{4A90E2}[Advance Helper]{FFFFFF} РђРІС‚РѕРїСЂРёРЅСЏС‚РёРµ СЂРµРјРѕРЅС‚Р° %s.",
+							repairEnabled and "{00CC66}РІРєР»СЋС‡РµРЅРѕ{FFFFFF}" or "{FF4444}РІС‹РєР»СЋС‡РµРЅРѕ{FFFFFF}"
 						),
 						-1
 					)
@@ -441,8 +415,8 @@ function main()
 
 					sampAddChatMessage(
 						string.format(
-							"{4A90E2}[Advance Helper]{FFFFFF} Автопринятие заправки %s.",
-							fuelEnabled and "{00CC66}включено{FFFFFF}" or "{FF4444}выключено{FFFFFF}"
+							"{4A90E2}[Advance Helper]{FFFFFF} РђРІС‚РѕРїСЂРёРЅСЏС‚РёРµ Р·Р°РїСЂР°РІРєРё %s.",
+							fuelEnabled and "{00CC66}РІРєР»СЋС‡РµРЅРѕ{FFFFFF}" or "{FF4444}РІС‹РєР»СЋС‡РµРЅРѕ{FFFFFF}"
 						),
 						-1
 					)
@@ -450,10 +424,10 @@ function main()
 				elseif list == 4 then
 					sampShowDialog(
 						DIALOG_MASK_SKIN,
-						"Скин после маски",
-						"Введите ID скина.\n\nЕсли оставить поле пустым, функция будет отключена.",
-						"Сохранить",
-						"Отмена",
+						"РЎРєРёРЅ РїРѕСЃР»Рµ РјР°СЃРєРё",
+						"Р’РІРµРґРёС‚Рµ ID СЃРєРёРЅР°.\n\nР•СЃР»Рё РѕСЃС‚Р°РІРёС‚СЊ РїРѕР»Рµ РїСѓСЃС‚С‹Рј, С„СѓРЅРєС†РёСЏ Р±СѓРґРµС‚ РѕС‚РєР»СЋС‡РµРЅР°.",
+						"РЎРѕС…СЂР°РЅРёС‚СЊ",
+						"РћС‚РјРµРЅР°",
 						DIALOG_STYLE_INPUT
 					)
 					
@@ -485,14 +459,14 @@ function main()
 
 					sampAddChatMessage(
 						string.format(
-							"{4A90E2}[Advance Helper]{FFFFFF} Запрос цветов %s.",
-							flowersEnabled and "{00CC66}включен{FFFFFF}" or "{FF4444}выключен{FFFFFF}"
+							"{4A90E2}[Advance Helper]{FFFFFF} Р—Р°РїСЂРѕСЃ С†РІРµС‚РѕРІ %s.",
+							flowersEnabled and "{00CC66}РІРєР»СЋС‡РµРЅ{FFFFFF}" or "{FF4444}РІС‹РєР»СЋС‡РµРЅ{FFFFFF}"
 						),
 						-1
 					)
 					
 					sampAddChatMessage(
-						"{4A90E2}После дарения цветов (/present), от вашего лица будет отправляться просьба о возврате цветов",
+						"{4A90E2}РџРѕСЃР»Рµ РґР°СЂРµРЅРёСЏ С†РІРµС‚РѕРІ (/present), РѕС‚ РІР°С€РµРіРѕ Р»РёС†Р° Р±СѓРґРµС‚ РѕС‚РїСЂР°РІР»СЏС‚СЊСЃСЏ РїСЂРѕСЃСЊР±Р° Рѕ РІРѕР·РІСЂР°С‚Рµ С†РІРµС‚РѕРІ",
 						-1
 					)
 				end
@@ -514,8 +488,8 @@ function main()
 
 					sampAddChatMessage(
 						string.format(
-							"{4A90E2}[Advance Helper]{FFFFFF} Рассылка %s.",
-							advertEnabled and "{00CC66}включена{FFFFFF}" or "{FF4444}выключена{FFFFFF}"
+							"{4A90E2}[Advance Helper]{FFFFFF} Р Р°СЃСЃС‹Р»РєР° %s.",
+							advertEnabled and "{00CC66}РІРєР»СЋС‡РµРЅР°{FFFFFF}" or "{FF4444}РІС‹РєР»СЋС‡РµРЅР°{FFFFFF}"
 						),
 						-1
 					)
@@ -523,11 +497,11 @@ function main()
 				elseif list == 1 then
 					local function buildMinutesList()
 						local rows = {
-							"{4A90E2}Время\t{4A90E2}Текст"
+							"{4A90E2}Р’СЂРµРјСЏ\t{4A90E2}РўРµРєСЃС‚"
 						}
 
 						for minute = 0, 55, 5 do
-							local preview = "{808080}Пусто"
+							local preview = "{808080}РџСѓСЃС‚Рѕ"
 
 							local list = messages[minute]
 							if list and #list > 0 then
@@ -550,20 +524,20 @@ function main()
 					
 					sampShowDialog(
 						DIALOG_MINUTES,
-						"Редактирование текстов",
+						"Р РµРґР°РєС‚РёСЂРѕРІР°РЅРёРµ С‚РµРєСЃС‚РѕРІ",
 						buildMinutesList(),
-						"Выбрать",
-						"Закрыть",
+						"Р’С‹Р±СЂР°С‚СЊ",
+						"Р—Р°РєСЂС‹С‚СЊ",
 						DIALOG_STYLE_TABLIST_HEADERS
 					)
 					
 				elseif list == 2 then
 					sampShowDialog(
 						DIALOG_NICK,
-						"Ник для рассылки",
-						"Введите ник персонажа.\n\nЕсли оставить поле пустым, рассылка будет работать на любом персонаже.",
-						"Сохранить",
-						"Отмена",
+						"РќРёРє РґР»СЏ СЂР°СЃСЃС‹Р»РєРё",
+						"Р’РІРµРґРёС‚Рµ РЅРёРє РїРµСЂСЃРѕРЅР°Р¶Р°.\n\nР•СЃР»Рё РѕСЃС‚Р°РІРёС‚СЊ РїРѕР»Рµ РїСѓСЃС‚С‹Рј, СЂР°СЃСЃС‹Р»РєР° Р±СѓРґРµС‚ СЂР°Р±РѕС‚Р°С‚СЊ РЅР° Р»СЋР±РѕРј РїРµСЂСЃРѕРЅР°Р¶Рµ.",
+						"РЎРѕС…СЂР°РЅРёС‚СЊ",
+						"РћС‚РјРµРЅР°",
 						DIALOG_STYLE_INPUT
 					)
 				end
@@ -581,20 +555,20 @@ function main()
 				if list == 0 then
 					sampShowDialog(
 						DIALOG_TIME,
-						"Время",
-						"Введите час (0-23).\n\nЕсли оставить поле пустым, будет использоваться серверное время.",
-						"Сохранить",
-						"Отмена",
+						"Р’СЂРµРјСЏ",
+						"Р’РІРµРґРёС‚Рµ С‡Р°СЃ (0-23).\n\nР•СЃР»Рё РѕСЃС‚Р°РІРёС‚СЊ РїРѕР»Рµ РїСѓСЃС‚С‹Рј, Р±СѓРґРµС‚ РёСЃРїРѕР»СЊР·РѕРІР°С‚СЊСЃСЏ СЃРµСЂРІРµСЂРЅРѕРµ РІСЂРµРјСЏ.",
+						"РЎРѕС…СЂР°РЅРёС‚СЊ",
+						"РћС‚РјРµРЅР°",
 						DIALOG_STYLE_INPUT
 					)
 					
 				elseif list == 1 then
 					sampShowDialog(
 						DIALOG_WEATHER,
-						"Погода",
-						"Введите ID погоды (0-255).\n\nЕсли оставить поле пустым, будет использоваться серверная погода.",
-						"Сохранить",
-						"Отмена",
+						"РџРѕРіРѕРґР°",
+						"Р’РІРµРґРёС‚Рµ ID РїРѕРіРѕРґС‹ (0-255).\n\nР•СЃР»Рё РѕСЃС‚Р°РІРёС‚СЊ РїРѕР»Рµ РїСѓСЃС‚С‹Рј, Р±СѓРґРµС‚ РёСЃРїРѕР»СЊР·РѕРІР°С‚СЊСЃСЏ СЃРµСЂРІРµСЂРЅР°СЏ РїРѕРіРѕРґР°.",
+						"РЎРѕС…СЂР°РЅРёС‚СЊ",
+						"РћС‚РјРµРЅР°",
 						DIALOG_STYLE_INPUT
 					)
 				end
@@ -613,19 +587,19 @@ function main()
 
 				sampShowDialog(
 					DIALOG_MESSAGES,
-					string.format("Сообщения (%02d минут)", selectedMinute),
+					string.format("РЎРѕРѕР±С‰РµРЅРёСЏ (%02d РјРёРЅСѓС‚)", selectedMinute),
 					string.format(
-						"Введите сообщения для %02d минут.\n\n" ..
-						"Разделитель сообщений: |\n" ..
-						"Сообщения отправляются с интервалом 2 секунды.\n\n" ..
-						"Пример:\n" ..
-						"/fm Первое сообщение|/fm Второе сообщение|/jn Третье сообщение\n\n" ..
-						"Текущие сообщения:\n%s",
+						"Р’РІРµРґРёС‚Рµ СЃРѕРѕР±С‰РµРЅРёСЏ РґР»СЏ %02d РјРёРЅСѓС‚.\n\n" ..
+						"Р Р°Р·РґРµР»РёС‚РµР»СЊ СЃРѕРѕР±С‰РµРЅРёР№: |\n" ..
+						"РЎРѕРѕР±С‰РµРЅРёСЏ РѕС‚РїСЂР°РІР»СЏСЋС‚СЃСЏ СЃ РёРЅС‚РµСЂРІР°Р»РѕРј 2 СЃРµРєСѓРЅРґС‹.\n\n" ..
+						"РџСЂРёРјРµСЂ:\n" ..
+						"/fm РџРµСЂРІРѕРµ СЃРѕРѕР±С‰РµРЅРёРµ|/fm Р’С‚РѕСЂРѕРµ СЃРѕРѕР±С‰РµРЅРёРµ|/jn РўСЂРµС‚СЊРµ СЃРѕРѕР±С‰РµРЅРёРµ\n\n" ..
+						"РўРµРєСѓС‰РёРµ СЃРѕРѕР±С‰РµРЅРёСЏ:\n%s",
 						selectedMinute,
 						table.concat(messages[selectedMinute] or {}, "\n")
 					),
-					"Сохранить",
-					"Закрыть",
+					"РЎРѕС…СЂР°РЅРёС‚СЊ",
+					"Р—Р°РєСЂС‹С‚СЊ",
 					DIALOG_STYLE_INPUT
 				)
 			end
@@ -638,8 +612,8 @@ function main()
 
 				sampAddChatMessage(
 					string.format(
-						"{4A90E2}[Advance Helper]{FFFFFF} Ник рассылки установлен: {00CC66}%s",
-						advertNick == "" and "Любой персонаж" or advertNick
+						"{4A90E2}[Advance Helper]{FFFFFF} РќРёРє СЂР°СЃСЃС‹Р»РєРё СѓСЃС‚Р°РЅРѕРІР»РµРЅ: {00CC66}%s",
+						advertNick == "" and "Р›СЋР±РѕР№ РїРµСЂСЃРѕРЅР°Р¶" or advertNick
 					),
 					-1
 				)
@@ -671,7 +645,7 @@ function main()
 
 				sampAddChatMessage(
 					string.format(
-						"{4A90E2}[Advance Helper]{FFFFFF} Сообщения для {4A90E2}%02d{FFFFFF} минут сохранены.",
+						"{4A90E2}[Advance Helper]{FFFFFF} РЎРѕРѕР±С‰РµРЅРёСЏ РґР»СЏ {4A90E2}%02d{FFFFFF} РјРёРЅСѓС‚ СЃРѕС…СЂР°РЅРµРЅС‹.",
 						selectedMinute
 					),
 					-1
@@ -692,7 +666,7 @@ function main()
 					maskSkinId = input
 				else
 					sampAddChatMessage(
-						"{4A90E2}[Advance Helper]{FFFFFF} ID скина должен быть числом.",
+						"{4A90E2}[Advance Helper]{FFFFFF} ID СЃРєРёРЅР° РґРѕР»Р¶РµРЅ Р±С‹С‚СЊ С‡РёСЃР»РѕРј.",
 						-1
 					)
 					goto continue
@@ -702,14 +676,14 @@ function main()
 				
 				sampAddChatMessage(
 					string.format(
-						"{4A90E2}[Advance Helper]{FFFFFF} Скин после маски установлен: %s",
-						maskSkinId == "" and "{FF4444}ВЫКЛ" or "{00CC66}" .. maskSkinId
+						"{4A90E2}[Advance Helper]{FFFFFF} РЎРєРёРЅ РїРѕСЃР»Рµ РјР°СЃРєРё СѓСЃС‚Р°РЅРѕРІР»РµРЅ: %s",
+						maskSkinId == "" and "{FF4444}Р’Р«РљР›" or "{00CC66}" .. maskSkinId
 					),
 					-1
 				)
 
 				sampAddChatMessage(
-					"{4A90E2}Функция доступна только игрокам с Advance Platinum (/mm > 12 > 22)",
+					"{4A90E2}Р¤СѓРЅРєС†РёСЏ РґРѕСЃС‚СѓРїРЅР° С‚РѕР»СЊРєРѕ РёРіСЂРѕРєР°Рј СЃ Advance Platinum (/mm > 12 > 22)",
 					-1
 				)
 				wait(0)
@@ -729,7 +703,7 @@ function main()
 					timeHour = input
 				else
 					sampAddChatMessage(
-						"{4A90E2}[Advance Helper]{FFFFFF} Введите число от 0 до 23.",
+						"{4A90E2}[Advance Helper]{FFFFFF} Р’РІРµРґРёС‚Рµ С‡РёСЃР»Рѕ РѕС‚ 0 РґРѕ 23.",
 						-1
 					)
 					goto continue
@@ -753,7 +727,7 @@ function main()
 					weatherId = input
 				else
 					sampAddChatMessage(
-						"{4A90E2}[Advance Helper]{FFFFFF} Введите число от 0 до 255.",
+						"{4A90E2}[Advance Helper]{FFFFFF} Р’РІРµРґРёС‚Рµ С‡РёСЃР»Рѕ РѕС‚ 0 РґРѕ 255.",
 						-1
 					)
 					goto continue2
@@ -780,7 +754,7 @@ function sampev.onShowDialog(id, style, title, button1, button2, text)
     playerMenuLastItem = count
 
     text = text .. string.format(
-		"\n{4A90E2}%d. Настройки Advance Helper",
+		"\n{4A90E2}%d. РќР°СЃС‚СЂРѕР№РєРё Advance Helper",
 		playerMenuLastItem + 1
 	)
 
@@ -799,7 +773,7 @@ function sampev.onSendDialogResponse(id, button, listitem, input)
 
     if button == 1 and listitem == playerMenuLastItem then
         lua_thread.create(function()
-            wait(200) -- можно 100-300 мс
+            wait(200)
             showMenu()
         end)
 
@@ -813,7 +787,7 @@ function sampev.onServerMessage(color, text)
     end
 	
 	do
-		if text:find("^Вы надели маску") and maskSkinId ~= "" then
+		if text:find("^Р’С‹ РЅР°РґРµР»Рё РјР°СЃРєСѓ") and maskSkinId ~= "" then
 			lua_thread.create(function()
 				wait(150)
 				sampSendChat("/setskin " .. maskSkinId)
@@ -824,7 +798,7 @@ function sampev.onServerMessage(color, text)
 	end
 
     do
-        local nick, price = text:match("^(%S+) предлагает произвести ремонт Вашего транспорта за (%d+)%$")
+        local nick, price = text:match("^(%S+) РїСЂРµРґР»Р°РіР°РµС‚ РїСЂРѕРёР·РІРµСЃС‚Рё СЂРµРјРѕРЅС‚ Р’Р°С€РµРіРѕ С‚СЂР°РЅСЃРїРѕСЂС‚Р° Р·Р° (%d+)%$")
 
         if nick and price and repairEnabled then
             price = tonumber(price)
@@ -836,7 +810,7 @@ function sampev.onServerMessage(color, text)
 
                 lua_thread.create(function()
                     wait(150)
-                    sampSendChat(string.format("/n %s, кидай за 1$", nick))
+                    sampSendChat(string.format("/n %s, РєРёРґР°Р№ Р·Р° 1$", nick))
                 end)
             end
 
@@ -844,9 +818,9 @@ function sampev.onServerMessage(color, text)
         end
     end
 
-    -- Заправка
+    -- ????????
     do
-        local nick, liters = text:match("^(%S+) предлагает заправить Ваш транспорт на (%d+) л за %d+%$")
+        local nick, liters = text:match("^(%S+) РїСЂРµРґР»Р°РіР°РµС‚ Р·Р°РїСЂР°РІРёС‚СЊ Р’Р°С€ С‚СЂР°РЅСЃРїРѕСЂС‚ РЅР° (%d+) Р» Р·Р° %d+%$")
 
         if nick and liters and fuelEnabled then
             liters = tonumber(liters)
@@ -858,7 +832,7 @@ function sampev.onServerMessage(color, text)
 
                 lua_thread.create(function()
                     wait(150)
-                    sampSendChat(string.format("/n %s, кидай 1 л", nick))
+                    sampSendChat(string.format("/n %s, РєРёРґР°Р№ 1 Р»", nick))
                 end)
             end
 
@@ -866,18 +840,17 @@ function sampev.onServerMessage(color, text)
         end
     end
 	
-	-- Запрос цветов
 	do
-		local nick = text:match("^(%S+) получил от Вас цветы$")
+		local nick = text:match("^(%S+) РїРѕР»СѓС‡РёР» РѕС‚ Р’Р°СЃ С†РІРµС‚С‹$")
 
 		if nick and flowersEnabled then
 			lua_thread.create(function()
 				local phrases = {
-					"Будьте добры, верните цветы, пожалуйста",
-					"Если не сложно, верните цветы",
-					"Верните цветы, пожалуйста",
-					"Буду благодарен, если вернете цветы",
-					"Не забудьте вернуть цветы, пожалуйста"
+					"Р‘СѓРґСЊС‚Рµ РґРѕР±СЂС‹, РІРµСЂРЅРёС‚Рµ С†РІРµС‚С‹, РїРѕР¶Р°Р»СѓР№СЃС‚Р°",
+					"Р•СЃР»Рё РЅРµ СЃР»РѕР¶РЅРѕ, РІРµСЂРЅРёС‚Рµ С†РІРµС‚С‹",
+					"Р’РµСЂРЅРёС‚Рµ С†РІРµС‚С‹, РїРѕР¶Р°Р»СѓР№СЃС‚Р°",
+					"Р‘СѓРґСѓ Р±Р»Р°РіРѕРґР°СЂРµРЅ, РµСЃР»Рё РІРµСЂРЅРµС‚Рµ С†РІРµС‚С‹",
+					"РќРµ Р·Р°Р±СѓРґСЊС‚Рµ РІРµСЂРЅСѓС‚СЊ С†РІРµС‚С‹, РїРѕР¶Р°Р»СѓР№СЃС‚Р°"
 				}
 
 				sampSendChat(string.format("%s, %s", nick:gsub("_", " "), phrases[math.random(#phrases)]))
@@ -886,7 +859,7 @@ function sampev.onServerMessage(color, text)
 
 				local _, myId = sampGetPlayerIdByCharHandle(PLAYER_PED)
 				if myId then
-					sampSendChat(string.format("/n %s, /present %d пожалуйста", nick, myId))
+					sampSendChat(string.format("/n %s, /present %d РїРѕР¶Р°Р»СѓР№СЃС‚Р°", nick, myId))
 				end
 			end)
 
