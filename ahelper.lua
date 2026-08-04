@@ -50,7 +50,7 @@ local function join(tbl)
     return table.concat(tbl or {}, "|")
 end
 
-local VERSION = "1.0"
+local VERSION = "1.2"
 
 local requests = require("requests")
 
