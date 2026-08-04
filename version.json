@@ -1,7 +1,8 @@
 {
-    "version": "1.1",
-    "script": "https://raw.githubusercontent.com/LouisMontblanc/AdvanceHelper/main/AdvanceHelper.lua",
+    "version": "1.2",
+    "script": "https://raw.githubusercontent.com/freimaurerey/Advance-Helper/main/ahelper.lua"
     "changelog": [
-        "test"
+        "test1",
+        "test2"
     ]
 }
