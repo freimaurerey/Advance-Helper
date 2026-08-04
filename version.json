@@ -2,6 +2,6 @@
     "version": "1.2.2",
     "script": "https://raw.githubusercontent.com/freimaurerey/Advance-Helper/main/ahelper.lua"
     "changelog": [
-        "new texts update"
+        "delete time weather from menu"
     ]
 }
