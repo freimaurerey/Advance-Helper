@@ -1,7 +1,9 @@
 {
-    "version": "1.2.3",
+    "version": "1.2.4",
     "script": "https://raw.githubusercontent.com/freimaurerey/Advance-Helper/main/ahelper.lua"
     "changelog": [
-        "delete time weather from menu"
+        "Возможность установить скин после спавна для игроков с Advance Platinum",
+        "Взаимодействие со скинами вынесено в отдельный диалог",
+        "Убран функционал погоды и времени (происходили краши игры)"
     ]
 }
