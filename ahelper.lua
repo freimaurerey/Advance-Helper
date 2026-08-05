@@ -411,7 +411,9 @@ function main()
 
     wait(500)
 
-    checkForUpdates()
+    if not config.lastUpdateInfo then
+		checkForUpdates()
+	end
 
     if sampIsDialogActive() then
         sampCloseCurrentDialogWithButton(0)
