@@ -56,6 +56,7 @@ local UPDATE_URL = "https://raw.githubusercontent.com/freimaurerey/Advance-Helpe
 local function defaultConfig()
     return {
 		version = "unknown",
+		lastUpdateInfo = nil,
 	
         settings = {
             helper = true,
@@ -106,6 +107,7 @@ local function loadConfig()
     config = data
 
 	config.version = config.version or "unknown"
+	config.lastUpdateInfo = config.lastUpdateInfo
     config.settings = config.settings or {}
     config.advert = config.advert or {}
 
@@ -298,6 +300,7 @@ local function checkForUpdates()
 
         if config.version == "unknown" then
 		    config.version = data.version
+			config.lastUpdateInfo = data.changelog
 		    saveConfig()
 		    return
 		end
@@ -345,32 +348,6 @@ local function checkForUpdates()
 
 		config.version = data.version
 		saveConfig()
-
-        if data.changelog then
-			local rows = {
-				"{FFFFFF}Advance Helper был успешно обновлен до версии {4A90E2}" .. data.version,
-				"",
-				"{4A90E2}Что нового:",
-				""
-			}
-
-			for _, change in ipairs(data.changelog) do
-				table.insert(rows, "{FFFFFF}• " .. tostring(change))
-			end
-
-			table.insert(rows, "")
-			table.insert(rows, "{808080}Telegram-канал:")
-			table.insert(rows, "{4A90E2}t.me/arphelper")
-
-			sampShowDialog(
-				DIALOG_UPDATE,
-				"{4A90E2}Обновление Advance Helper",
-				table.concat(rows, "\n"),
-				"Продолжить",
-				"",
-				DIALOG_STYLE_MSGBOX
-			)
-		end
 
         sampAddChatMessage(
 		    string.format(
@@ -439,6 +416,35 @@ function main()
 		"{C8C8C8}Команда управления: {FFFFFF}/ah {C8C8C8}| Панель настроек: {FFFFFF}/ahelper",
 		-1
 	)
+	
+	if config.lastUpdateInfo then
+		local rows = {
+			"{FFFFFF}Advance Helper был успешно обновлен до версии {4A90E2}" .. config.lastUpdateInfo.version,
+			"",
+			"{4A90E2}Что нового:",
+			""
+		}
+
+		for _, change in ipairs(config.lastUpdateInfo or {}) do
+			table.insert(rows, "{FFFFFF}• " .. tostring(change))
+		end
+
+		table.insert(rows, "")
+		table.insert(rows, "{808080}Telegram-канал:")
+		table.insert(rows, "{4A90E2}t.me/arphelper")
+
+		sampShowDialog(
+			DIALOG_UPDATE,
+			"{4A90E2}Обновление Advance Helper",
+			table.concat(rows, "\n"),
+			"Продолжить",
+			"",
+			DIALOG_STYLE_MSGBOX
+		)
+
+		config.lastUpdateInfo = nil
+		saveConfig()
+	end
 	
 	lua_thread.create(function()
 		local lastMinute = -1
@@ -590,12 +596,6 @@ function main()
 			elseif result and button == 0 then
 				showMenu()
 				
-			end
-			
-			local result, button = sampHasDialogRespond(DIALOG_UPDATE)
-
-			if result then
-				thisScript():reload()
 			end
 			
 			local result, button, list = sampHasDialogRespond(DIALOG_SKINS)
