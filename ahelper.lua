@@ -27,10 +27,9 @@ local repairEnabled
 local fuelEnabled
 local flowersEnabled
 local maskSkinId
+local spawnSkinId
 local advertEnabled
 local advertNick
-local timeHour
-local weatherId
 
 local function split(str, sep)
     local result = {}
@@ -64,10 +63,9 @@ local function defaultConfig()
             fuel = true,
 			flowers = true,
 			maskSkinId = "",
+			spawnSkinId = "",
             advert = false,
-            advertNick = "",
-			timeHour = "",
-			weatherId = ""
+            advertNick = ""
         },
 
         advert = {
@@ -129,10 +127,9 @@ local function saveConfig()
     config.settings.fuel = fuelEnabled
 	config.settings.flowers = flowersEnabled
 	config.settings.maskSkinId = maskSkinId
+	config.settings.spawnSkinId = spawnSkinId
     config.settings.advert = advertEnabled
     config.settings.advertNick = advertNick
-	config.settings.timeHour = timeHour
-	config.settings.weatherId = weatherId
 
     for minute = 0,55,5 do
         config.advert[tostring(minute)] = messages[minute] or {}
@@ -159,10 +156,9 @@ repairEnabled = config.settings.repair ~= false
 fuelEnabled = config.settings.fuel ~= false
 flowersEnabled = config.settings.flowers ~= false
 maskSkinId = tostring(config.settings.maskSkinId or "")
+spawnSkinId = tostring(config.settings.spawnSkinId or "")
 advertEnabled = config.settings.advert or false
 advertNick = config.settings.advertNick or ""
-timeHour = tostring(config.settings.timeHour or "")
-weatherId = tostring(config.settings.weatherId or "")
 
 for minute = 0,55,5 do
     local key = tostring(minute)
@@ -179,11 +175,11 @@ local DIALOG_MINUTES = 5556
 local DIALOG_NICK = 5557
 local DIALOG_MESSAGES = 5558
 local DIALOG_MASK_SKIN = 5559
-local DIALOG_TIME = 5560
-local DIALOG_WEATHER = 5561
 local DIALOG_ADVERT = 5562
 local DIALOG_ENVIRONMENT = 5563
 local DIALOG_FOR_TASKS = 5564
+local DIALOG_SKINS = 5560
+local DIALOG_SPAWN_SKIN = 5561
 
 local selectedMinute = 0
 
@@ -213,7 +209,7 @@ local function showMenu()
         "{4A90E2}Возможности:",
 		"Автопринятие ремонта (1$)\t" .. status(repairEnabled),
 		"Автопринятие заправки (1 л)\t" .. status(fuelEnabled),
-		"Скин после маски (VIP)\t" .. (maskSkinId ~= "" and "{4A90E2}" .. maskSkinId or "{FF4444}ВЫКЛ"),
+		"{4A90E2}Взаимодействия со скинами\t{4A90E2}>>>",
 		"{4A90E2}Возможности для заданий (/tasks)\t{4A90E2}>>>",
 		"{4A90E2}Управление рассылкой\t{4A90E2}>>>",
 		-- "{4A90E2}Управление временем и погодой\t{4A90E2}>>>",
@@ -247,23 +243,6 @@ local function showAdvertMenu()
     )
 end
 
-local function showEnvironmentMenu()
-    local text = table.concat({
-		"{4A90E2}Параметр\tСостояние",
-		"Время\t" .. (timeHour ~= "" and "{4A90E2}" .. timeHour or "{FF4444}ВЫКЛ"),
-		"Погода\t" .. (weatherId ~= "" and "{4A90E2}" .. weatherId or "{FF4444}ВЫКЛ"),
-	}, "\n")
-
-	sampShowDialog(
-		DIALOG_ENVIRONMENT,
-		"{4A90E2}Управление временем и погодой",
-		text,
-		"Выбрать",
-		"Закрыть",
-		DIALOG_STYLE_TABLIST_HEADERS
-	)
-end
-
 local function showForTasksMenu()
     local text = table.concat({
         "{4A90E2}Параметр\tСостояние",
@@ -280,10 +259,27 @@ local function showForTasksMenu()
     )
 end
 
+local function showSkinsMenu()
+    local text = table.concat({
+        "{4A90E2}Параметр\tСостояние",
+		"Скин после маски ({4A90E2}Advance Platinum{ffffff})\t" .. (maskSkinId ~= "" and "{ffffff}" .. maskSkinId or "{FF4444}ВЫКЛ"),
+		"Скин после спавна ({4A90E2}Advance Platinum{ffffff})\t" .. (spawnSkinId ~= "" and "{ffffff}" .. spawnSkinId or "{FF4444}ВЫКЛ"),
+    }, "\n")
+
+    sampShowDialog(
+        DIALOG_SKINS,
+        string.format("Взаимодействия со скинами", config.version),
+        text,
+        "Изменить",
+		"Закрыть",
+        DIALOG_STYLE_TABLIST_HEADERS
+    )
+end
+
 local function checkForUpdates()
     lua_thread.create(function()
 		sampAddChatMessage(
-			"{4A90E2}[Advance Helper] Проверка обновлений..",
+			"{4A90E2}Выполняется проверка наличия обновлений Advance Helper",
 			-1
 		)
 			
@@ -306,12 +302,18 @@ local function checkForUpdates()
 		end
 		
 		if data.version == config.version then
+			sampAddChatMessage(
+				string.format(
+					"{4A90E2}Обновлений не обнаружено. Используется актуальная версия Advance Helper"
+				),
+				-1
+			)
 		    return
 		end
 
         sampAddChatMessage(
 		    string.format(
-		        "{4A90E2}[Advance Helper] Доступна новая версия: {FFFFFF}%s{4A90E2}. Загрузка обновления..",
+		        "{4A90E2}Доступно обновление Advance Helper до версии {FFFFFF}%s{4A90E2}. Начинается загрузка",
 		        data.version
 		    ),
 		    -1
@@ -321,7 +323,7 @@ local function checkForUpdates()
 
         if not ok2 or not script or script.status_code ~= 200 then
             sampAddChatMessage(
-			    "{4A90E2}[Advance Helper] Не удалось загрузить обновление",
+			    "{4A90E2}Не удалось загрузить обновление Advance Helper",
 			    -1
 			)
             return
@@ -331,7 +333,7 @@ local function checkForUpdates()
 
         if not file then
             sampAddChatMessage(
-			    "{4A90E2}[Advance Helper] Не удалось открыть файл скрипта для обновления",
+			    "{4A90E2}Не удалось открыть файл скрипта для обновления Advance Helper",
 			    -1
 			)
             return
@@ -344,22 +346,34 @@ local function checkForUpdates()
 		saveConfig()
 
         if data.changelog then
-            sampAddChatMessage(
-			    "{4A90E2}[Advance Helper] Список изменений:",
-			    -1
-			)
+			local rows = {
+				"{FFFFFF}Advance Helper был успешно обновлен до версии {4A90E2}" .. data.version,
+				"",
+				"{4A90E2}Что нового:",
+				""
+			}
 
-            for _, change in ipairs(data.changelog) do
-                sampAddChatMessage(
-                    "{C8C8C8}• " .. tostring(change),
-                    -1
-                )
-            end
-        end
+			for _, change in ipairs(data.changelog) do
+				table.insert(rows, "{FFFFFF}• " .. tostring(change))
+			end
+
+			table.insert(rows, "")
+			table.insert(rows, "{808080}Telegram-канал:")
+			table.insert(rows, "{4A90E2}t.me/arphelper")
+
+			sampShowDialog(
+				5565,
+				"{4A90E2}Обновление Advance Helper",
+				table.concat(rows, "\n"),
+				"Продолжить",
+				"",
+				DIALOG_STYLE_MSGBOX
+			)
+		end
 
         sampAddChatMessage(
 		    string.format(
-		        "{4A90E2}[Advance Helper] Обновление до версии {FFFFFF}%s{4A90E2} успешно установлено",
+		        "{4A90E2}Установка обновления Advance Helper завершена. Версия: {FFFFFF}%s",
 		        data.version
 		    ),
 		    -1
@@ -382,22 +396,26 @@ end
 
 function main()
     repeat
-		wait(0)
-	until isSampAvailable()
+        wait(0)
+    until isSampAvailable()
 
-	wait(500)
+    repeat
+        wait(200)
+    until sampIsLocalPlayerSpawned()
 
-	checkForUpdates()
+    wait(500)
 
-	if sampIsDialogActive() then
-		sampCloseCurrentDialogWithButton(0)
-	end
+    checkForUpdates()
+
+    if sampIsDialogActive() then
+        sampCloseCurrentDialogWithButton(0)
+    end
 
     sampRegisterChatCommand("ahelper", showMenu)
 
     sampRegisterChatCommand("ah", function()
         helperEnabled = not helperEnabled
-		saveConfig()
+        saveConfig()
 
         sampAddChatMessage(
             string.format(
@@ -409,17 +427,17 @@ function main()
     end)
 
     sampAddChatMessage(
-        string.format(
-            "{4A90E2}Advance Helper{FFFFFF} загружен. Текущая версия: {4A90E2}%s",
-            config.version
-        ),
-        -1
-    )
+		string.format(
+			"{4A90E2}Advance Helper успешно инициализирован. Текущая версия: {FFFFFF}%s",
+			config.version
+		),
+		-1
+	)
 
-    sampAddChatMessage(
-        "{C8C8C8}Для деактивации: {FFFFFF}/ah {C8C8C8}| Возможности: {FFFFFF}/ahelper",
-        -1
-    )
+	sampAddChatMessage(
+		"{C8C8C8}Команда управления: {FFFFFF}/ah {C8C8C8}| Панель настроек: {FFFFFF}/ahelper",
+		-1
+	)
 	
 	lua_thread.create(function()
 		local lastMinute = -1
@@ -521,14 +539,7 @@ function main()
 					)
 					
 				elseif list == 4 then
-					sampShowDialog(
-						DIALOG_MASK_SKIN,
-						"Скин после маски",
-						"Введите ID скина.\n\nЕсли оставить поле пустым, функция будет отключена",
-						"Сохранить",
-						"Отмена",
-						DIALOG_STYLE_INPUT
-					)
+					showSkinsMenu()
 					
 				elseif list == 5 then
 					showForTasksMenu()
@@ -574,6 +585,53 @@ function main()
 					wait(0)
 					showForTasksMenu()
 				end
+				
+			elseif result and button == 0 then
+				showMenu()
+				
+			end
+			
+			local result, button, list = sampHasDialogRespond(DIALOG_SKINS)
+			local changed = false
+
+			if result and button == 1 then					
+				if list == 0 then
+					sampShowDialog(
+						DIALOG_MASK_SKIN,
+						"Скин после маски",
+						"{FFFFFF}Введите ID скина.\n\n" ..
+						"{4A90E2}Примечание:{FFFFFF} скин будет установлен только\n" ..
+						"если ваш персонаж находится {4A90E2}в интерьере{FFFFFF}.\n\n" ..
+						"Если оставить поле пустым, функция будет {FF4444}отключена{FFFFFF}.",
+						"Сохранить",
+						"Отмена",
+						DIALOG_STYLE_INPUT
+					)
+					
+				end
+					
+				if list == 1 then
+					sampShowDialog(
+						DIALOG_SPAWN_SKIN,
+						"Скин после спавна",
+						"{FFFFFF}Введите ID скина.\n\n" ..
+						"{4A90E2}Примечание:{FFFFFF} скин будет установлен только\n" ..
+						"если ваш персонаж находится {4A90E2}в интерьере{FFFFFF}.\n\n" ..
+						"Если оставить поле пустым, функция будет {FF4444}отключена{FFFFFF}.",
+						"Сохранить",
+						"Отмена",
+						DIALOG_STYLE_INPUT
+					)
+				end
+				
+				if changed then
+					wait(0)
+					showSkinsMenu()
+				end
+			
+			elseif result and button == 0 then
+				showMenu()
+				
 			end
 			
 			local result, button, list = sampHasDialogRespond(DIALOG_ADVERT)
@@ -645,37 +703,10 @@ function main()
 					wait(0)
 					showAdvertMenu()
 				end
-			end
-			
-			local result, button, list = sampHasDialogRespond(DIALOG_ENVIRONMENT)
-			local changed = false
-
-			if result and button == 1 then					
-				if list == 0 then
-					sampShowDialog(
-						DIALOG_TIME,
-						"Время",
-						"Введите час (0-23).\n\nЕсли оставить поле пустым, будет использоваться серверное время",
-						"Сохранить",
-						"Отмена",
-						DIALOG_STYLE_INPUT
-					)
-					
-				elseif list == 1 then
-					sampShowDialog(
-						DIALOG_WEATHER,
-						"Погода",
-						"Введите ID погоды (0-255).\n\nЕсли оставить поле пустым, будет использоваться серверная погода",
-						"Сохранить",
-						"Отмена",
-						DIALOG_STYLE_INPUT
-					)
-				end
-					
-				if changed then
-					wait(0)
-					showMenu()
-				end
+				
+			elseif result and button == 0 then
+				showMenu()
+				
 			end
 			
 			local result, button, list = sampHasDialogRespond(DIALOG_MINUTES)
@@ -768,79 +799,86 @@ function main()
 						"{4A90E2}[Advance Helper]{FFFFFF} ID скина должен быть числом",
 						-1
 					)
-					goto continue
 				end
 
-				saveConfig()
+				if input == "" or tonumber(input) then
+					saveConfig()
+
+					sampAddChatMessage(
+						string.format(
+							"{4A90E2}[Advance Helper]{FFFFFF} Скин после маски установлен: %s",
+							maskSkinId == "" and "{FF4444}ВЫКЛ" or "{4A90E2}" .. maskSkinId
+						),
+						-1
+					)
+
+					sampAddChatMessage(
+						"{4A90E2}Функция доступна только игрокам с Advance Platinum (/mm > 12 > 22)",
+						-1
+					)
+
+					wait(0)
+					showSkinsMenu()
+				end
+			end
 				
-				sampAddChatMessage(
-					string.format(
-						"{4A90E2}[Advance Helper]{FFFFFF} Скин после маски установлен: %s",
-						maskSkinId == "" and "{FF4444}ВЫКЛ" or "{00CC66}" .. maskSkinId
-					),
-					-1
-				)
-
-				sampAddChatMessage(
-					"{4A90E2}Функция доступна только игрокам с Advance Platinum (/mm > 12 > 22)",
-					-1
-				)
-				wait(0)
-				showMenu()
-
-				::continue::
-			end
-			
-			local result, button, _, input = sampHasDialogRespond(DIALOG_TIME)
+			local result, button, _, input = sampHasDialogRespond(DIALOG_SPAWN_SKIN)
 
 			if result and button == 1 then
 				input = input:gsub("%s+", "")
 
 				if input == "" then
-					timeHour = ""
-				elseif tonumber(input) and tonumber(input) >= 0 and tonumber(input) <= 23 then
-					timeHour = input
+					spawnSkinId = ""
+				elseif tonumber(input) then
+					spawnSkinId = input
 				else
 					sampAddChatMessage(
-						"{4A90E2}[Advance Helper]{FFFFFF} Введите число от 0 до 23",
+						"{4A90E2}[Advance Helper]{FFFFFF} ID скина должен быть числом",
 						-1
 					)
-					goto continue
 				end
 
-				saveConfig()
-				wait(0)
-				showEnvironmentMenu()
+				if input == "" or tonumber(input) then
+					saveConfig()
 
-				::continue::
-			end
-
-			local result, button, _, input = sampHasDialogRespond(DIALOG_WEATHER)
-
-			if result and button == 1 then
-				input = input:gsub("%s+", "")
-
-				if input == "" then
-					weatherId = ""
-				elseif tonumber(input) and tonumber(input) >= 0 and tonumber(input) <= 255 then
-					weatherId = input
-				else
 					sampAddChatMessage(
-						"{4A90E2}[Advance Helper]{FFFFFF} Введите число от 0 до 255",
+						string.format(
+							"{4A90E2}[Advance Helper]{FFFFFF} Скин после спавна установлен: %s",
+							spawnSkinId == "" and "{FF4444}ВЫКЛ" or "{4A90E2}" .. spawnSkinId
+						),
 						-1
 					)
-					goto continue2
+
+					sampAddChatMessage(
+						"{4A90E2}Функция доступна только игрокам с Advance Platinum (/mm > 12 > 22)",
+						-1
+					)
+
+					wait(0)
+					showSkinsMenu()
 				end
-
-				saveConfig()
-				wait(0)
-				showEnvironmentMenu()
-
-				::continue2::
 			end
         end
     end)
 end
+
+function sampev.onSendSpawn()
+   if spawnSkinId ~= "" then
+		lua_thread.create(function()
+			wait(2000)
+			sampSendChat("/setskin " .. spawnSkinId)
+			wait(100)
+			sampAddChatMessage(
+				string.format(
+					"{4A90E2}Advance Helper произвел автоматическую установку скина (%s)",
+					spawnSkinId
+				),
+				-1
+			)
+		end)
+	end
+end
+
 
 function sampev.onShowDialog(id, style, title, button1, button2, text)
     if id ~= 27 then return end
