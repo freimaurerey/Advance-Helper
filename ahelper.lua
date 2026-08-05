@@ -180,6 +180,7 @@ local DIALOG_ENVIRONMENT = 5563
 local DIALOG_FOR_TASKS = 5564
 local DIALOG_SKINS = 5560
 local DIALOG_SPAWN_SKIN = 5561
+local DIALOG_UPDATE = 5565
 
 local selectedMinute = 0
 
@@ -362,7 +363,7 @@ local function checkForUpdates()
 			table.insert(rows, "{4A90E2}t.me/arphelper")
 
 			sampShowDialog(
-				5565,
+				DIALOG_UPDATE,
 				"{4A90E2}Обновление Advance Helper",
 				table.concat(rows, "\n"),
 				"Продолжить",
@@ -380,7 +381,7 @@ local function checkForUpdates()
 		)
 
         wait(1000)
-        -- thisScript():reload()
+        thisScript():reload()
     end)
 end
 
@@ -589,6 +590,12 @@ function main()
 			elseif result and button == 0 then
 				showMenu()
 				
+			end
+			
+			local result, button = sampHasDialogRespond(DIALOG_UPDATE)
+
+			if result then
+				thisScript():reload()
 			end
 			
 			local result, button, list = sampHasDialogRespond(DIALOG_SKINS)
