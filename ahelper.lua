@@ -300,7 +300,6 @@ local function checkForUpdates()
 
         if config.version == "unknown" then
 		    config.version = data.version
-			config.lastUpdateInfo = data.changelog
 		    saveConfig()
 		    return
 		end
@@ -347,6 +346,7 @@ local function checkForUpdates()
 		file:close()
 
 		config.version = data.version
+		config.lastUpdateInfo = data
 		saveConfig()
 
         sampAddChatMessage(
@@ -425,7 +425,7 @@ function main()
 			""
 		}
 
-		for _, change in ipairs(config.lastUpdateInfo or {}) do
+		for _, change in ipairs(config.lastUpdateInfo.changelog or {}) do
 			table.insert(rows, "{FFFFFF}• " .. tostring(change))
 		end
 
