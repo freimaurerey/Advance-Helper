@@ -279,6 +279,36 @@ local function showSkinsMenu()
     )
 end
 
+local function isNewerVersion(newVersion, currentVersion)
+    local function parse(version)
+        local t = {}
+
+        for num in version:gmatch("%d+") do
+            table.insert(t, tonumber(num))
+        end
+
+        return t
+    end
+
+    local new = parse(newVersion)
+    local current = parse(currentVersion)
+
+    local max = math.max(#new, #current)
+
+    for i = 1, max do
+        local a = new[i] or 0
+        local b = current[i] or 0
+
+        if a > b then
+            return true
+        elseif a < b then
+            return false
+        end
+    end
+
+    return false
+end
+
 local function checkForUpdates()
     lua_thread.create(function()
 		sampAddChatMessage(
@@ -304,14 +334,12 @@ local function checkForUpdates()
 		    return
 		end
 		
-		if data.version == config.version then
+		if not isNewerVersion(data.version, config.version) then
 			sampAddChatMessage(
-				string.format(
-					"{4A90E2}Обновлений не обнаружено. Используется актуальная версия Advance Helper"
-				),
+				"{4A90E2}Обновлений не обнаружено. Используется актуальная версия Advance Helper",
 				-1
 			)
-		    return
+			return
 		end
 
         sampAddChatMessage(
