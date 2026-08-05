@@ -437,7 +437,7 @@ function main()
 			DIALOG_UPDATE,
 			"{4A90E2}Обновление Advance Helper",
 			table.concat(rows, "\n"),
-			"Продолжить",
+			"Ок",
 			"",
 			DIALOG_STYLE_MSGBOX
 		)
