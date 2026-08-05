@@ -1,6 +1,6 @@
 {
-    "version": "1.2.7",
-    "script": "https://raw.githubusercontent.com/freimaurerey/Advance-Helper/main/ahelper.lua"
+    "version": "1.2.8",
+    "script": "https://raw.githubusercontent.com/freimaurerey/Advance-Helper/main/ahelper.lua",
     "changelog": [
         "Возможность установить скин после спавна для игроков с Advance Platinum",
         "Взаимодействие со скинами вынесено в отдельный диалог",
