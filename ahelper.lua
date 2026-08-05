@@ -380,7 +380,7 @@ local function checkForUpdates()
 		)
 
         wait(1000)
-        thisScript():reload()
+        -- thisScript():reload()
     end)
 end
 
