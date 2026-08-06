@@ -463,6 +463,12 @@ function main()
 
 								wait(2000)
 							end
+
+							sampAddChatMessage(
+								string.format("{4A90E2}[Advance Helper]{FFFFFF} Рассылка за %02d минуту выполнена", minute),
+								-1
+							)		
+							
 						end)
 					end
 				end
