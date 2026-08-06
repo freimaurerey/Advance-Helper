@@ -56,7 +56,6 @@ local UPDATE_URL = "https://raw.githubusercontent.com/freimaurerey/Advance-Helpe
 local function defaultConfig()
     return {
 		version = "unknown",
-		lastUpdateInfo = nil,
 	
         settings = {
             helper = true,
@@ -295,11 +294,7 @@ local function isNewerVersion(newVersion, currentVersion)
     return false
 end
 
--- ВЫНЕСЕННАЯ ЧИСТАЯ ЛОГИКА ОТОБРАЖЕНИЯ ЧЕЙНДЖЛОГА
-local function showChangelogIfNeeded()
-    if not config.lastUpdateInfo then return false end
-
-    local info = config.lastUpdateInfo
+local function showChangelogDialog(info)
     local rows = {
         "{FFFFFF}Advance Helper был успешно обновлен до версии {4A90E2}" .. tostring(info.version),
         "",
@@ -315,10 +310,6 @@ local function showChangelogIfNeeded()
     table.insert(rows, "{808080}Telegram-канал:")
     table.insert(rows, "{4A90E2}t.me/arphelper")
 
-    -- Очищаем поле сразу, чтобы при следующих перезапусках окно не всплывало
-    config.lastUpdateInfo = nil
-    saveConfig()
-
     sampShowDialog(
         DIALOG_UPDATE,
         "{4A90E2}Обновление Advance Helper",
@@ -327,13 +318,10 @@ local function showChangelogIfNeeded()
         "",
         DIALOG_STYLE_MSGBOX
     )
-    return true
 end
 
 local function checkForUpdates()
     lua_thread.create(function()
-        sampAddChatMessage("{4A90E2}Выполняется проверка наличия обновлений Advance Helper", -1)
-            
         local ok, response = pcall(requests.get, UPDATE_URL)
         if not ok or not response or response.status_code ~= 200 then return end
 
@@ -368,22 +356,27 @@ local function checkForUpdates()
         file:write(u8:decode(script.text))
         file:close()
 
-        -- Записываем информацию для показа ЧЕЙНДЖЛОГА после перезапуска
+        -- Сохраняем в конфиг только новую версию без временных данных
         config.version = data.version
-        config.lastUpdateInfo = data
         saveConfig()
 
         sampAddChatMessage(string.format("{4A90E2}Установка обновления Advance Helper завершена. Версия: {FFFFFF}%s", data.version), -1)
 
-        wait(1000)
+        -- Показываем диалог сразу из полученных данных от сервера
+        showChangelogDialog(data)
+
+        wait(500)
         thisScript():reload()
     end)
 end
 
 function onScriptTerminate(script, quitGame)
     if script ~= thisScript() then return end
+
     if isSampAvailable() and sampIsDialogActive() then
-        sampCloseCurrentDialogWithButton(0)
+        if sampGetPlayerDialogId() ~= DIALOG_UPDATE then
+            sampCloseCurrentDialogWithButton(0)
+        end
     end
 end
 
@@ -398,10 +391,7 @@ function main()
 
     wait(500)
 
-    local updatedJustNow = showChangelogIfNeeded()
-    if not updatedJustNow then
-        checkForUpdates()
-    end
+    checkForUpdates()
 
     sampRegisterChatCommand("ahelper", showMenu)
 
