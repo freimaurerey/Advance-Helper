@@ -282,108 +282,98 @@ end
 local function isNewerVersion(newVersion, currentVersion)
     local function parse(version)
         local t = {}
-
-        for num in version:gmatch("%d+") do
-            table.insert(t, tonumber(num))
-        end
-
+        for num in version:gmatch("%d+") do table.insert(t, tonumber(num)) end
         return t
     end
 
-    local new = parse(newVersion)
-    local current = parse(currentVersion)
+    local new, current = parse(newVersion), parse(currentVersion)
+    for i = 1, math.max(#new, #current) do
+        local a, b = new[i] or 0, current[i] or 0
+        if a > b then return true
+        elseif a < b then return false end
+    end
+    return false
+end
 
-    local max = math.max(#new, #current)
+-- ВЫНЕСЕННАЯ ЧИСТАЯ ЛОГИКА ОТОБРАЖЕНИЯ ЧЕЙНДЖЛОГА
+local function showChangelogIfNeeded()
+    if not config.lastUpdateInfo then return false end
 
-    for i = 1, max do
-        local a = new[i] or 0
-        local b = current[i] or 0
+    local info = config.lastUpdateInfo
+    local rows = {
+        "{FFFFFF}Advance Helper был успешно обновлен до версии {4A90E2}" .. tostring(info.version),
+        "",
+        "{4A90E2}Что нового:",
+        ""
+    }
 
-        if a > b then
-            return true
-        elseif a < b then
-            return false
-        end
+    for _, change in ipairs(info.changelog or {}) do
+        table.insert(rows, "{FFFFFF}• " .. tostring(change))
     end
 
-    return false
+    table.insert(rows, "")
+    table.insert(rows, "{808080}Telegram-канал:")
+    table.insert(rows, "{4A90E2}t.me/arphelper")
+
+    -- Очищаем поле сразу, чтобы при следующих перезапусках окно не всплывало
+    config.lastUpdateInfo = nil
+    saveConfig()
+
+    sampShowDialog(
+        DIALOG_UPDATE,
+        "{4A90E2}Обновление Advance Helper",
+        table.concat(rows, "\n"),
+        "Ок",
+        "",
+        DIALOG_STYLE_MSGBOX
+    )
+    return true
 end
 
 local function checkForUpdates()
     lua_thread.create(function()
-		sampAddChatMessage(
-			"{4A90E2}Выполняется проверка наличия обновлений Advance Helper",
-			-1
-		)
-			
+        sampAddChatMessage("{4A90E2}Выполняется проверка наличия обновлений Advance Helper", -1)
+            
         local ok, response = pcall(requests.get, UPDATE_URL)
-
-        if not ok or not response or response.status_code ~= 200 then
-            return
-        end
+        if not ok or not response or response.status_code ~= 200 then return end
 
         local data, _, err = json.decode(response.text)
+        if err or type(data) ~= "table" then return end
 
-        if err or type(data) ~= "table" then
+        if config.version == "unknown" then
+            config.version = data.version
+            saveConfig()
+            return
+        end
+        
+        if not isNewerVersion(data.version, config.version) then
+            sampAddChatMessage("{4A90E2}Обновлений не обнаружено. Используется актуальная версия Advance Helper", -1)
             return
         end
 
-        if config.version == "unknown" then
-		    config.version = data.version
-		    saveConfig()
-		    return
-		end
-		
-		if not isNewerVersion(data.version, config.version) then
-			sampAddChatMessage(
-				"{4A90E2}Обновлений не обнаружено. Используется актуальная версия Advance Helper",
-				-1
-			)
-			return
-		end
-
-        sampAddChatMessage(
-		    string.format(
-		        "{4A90E2}Доступно обновление Advance Helper до версии {FFFFFF}%s{4A90E2}. Начинается загрузка",
-		        data.version
-		    ),
-		    -1
-		)
+        sampAddChatMessage(string.format("{4A90E2}Доступно обновление Advance Helper до версии {FFFFFF}%s{4A90E2}. Начинается загрузка", data.version), -1)
 
         local ok2, script = pcall(requests.get, data.script)
-
         if not ok2 or not script or script.status_code ~= 200 then
-            sampAddChatMessage(
-			    "{4A90E2}Не удалось загрузить обновление Advance Helper",
-			    -1
-			)
+            sampAddChatMessage("{4A90E2}Не удалось загрузить обновление Advance Helper", -1)
             return
         end
 
         local file = io.open(thisScript().path, "wb")
-
         if not file then
-            sampAddChatMessage(
-			    "{4A90E2}Не удалось открыть файл скрипта для обновления Advance Helper",
-			    -1
-			)
+            sampAddChatMessage("{4A90E2}Не удалось открыть файл скрипта для обновления Advance Helper", -1)
             return
         end
 
         file:write(u8:decode(script.text))
-		file:close()
+        file:close()
 
-		config.version = data.version
-		config.lastUpdateInfo = data
-		saveConfig()
+        -- Записываем информацию для показа ЧЕЙНДЖЛОГА после перезапуска
+        config.version = data.version
+        config.lastUpdateInfo = data
+        saveConfig()
 
-        sampAddChatMessage(
-		    string.format(
-		        "{4A90E2}Установка обновления Advance Helper завершена. Версия: {FFFFFF}%s",
-		        data.version
-		    ),
-		    -1
-		)
+        sampAddChatMessage(string.format("{4A90E2}Установка обновления Advance Helper завершена. Версия: {FFFFFF}%s", data.version), -1)
 
         wait(1000)
         thisScript():reload()
@@ -391,10 +381,7 @@ local function checkForUpdates()
 end
 
 function onScriptTerminate(script, quitGame)
-    if script ~= thisScript() then
-        return
-    end
-
+    if script ~= thisScript() then return end
     if isSampAvailable() and sampIsDialogActive() then
         sampCloseCurrentDialogWithButton(0)
     end
@@ -411,12 +398,9 @@ function main()
 
     wait(500)
 
-    if not config.lastUpdateInfo then
-		checkForUpdates()
-	end
-
-    if sampIsDialogActive() then
-        sampCloseCurrentDialogWithButton(0)
+    local updatedJustNow = showChangelogIfNeeded()
+    if not updatedJustNow then
+        checkForUpdates()
     end
 
     sampRegisterChatCommand("ahelper", showMenu)
