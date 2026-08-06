@@ -106,7 +106,6 @@ local function loadConfig()
     config = data
 
 	config.version = config.version or "unknown"
-	config.lastUpdateInfo = config.lastUpdateInfo
     config.settings = config.settings or {}
     config.advert = config.advert or {}
 
@@ -303,7 +302,8 @@ local function showChangelogDialog(info)
     }
 
     for _, change in ipairs(info.changelog or {}) do
-        table.insert(rows, "{FFFFFF}• " .. tostring(change))
+        -- Перекодируем строку из UTF-8 (json) в CP1251 (samp)
+        table.insert(rows, "{FFFFFF}• " .. u8:decode(tostring(change)))
     end
 
     table.insert(rows, "")
@@ -420,35 +420,6 @@ function main()
 		"{C8C8C8}Команда управления: {FFFFFF}/ah {C8C8C8}| Панель настроек: {FFFFFF}/ahelper",
 		-1
 	)
-	
-	if config.lastUpdateInfo then
-		local rows = {
-			"{FFFFFF}Advance Helper был успешно обновлен до версии {4A90E2}" .. config.lastUpdateInfo.version,
-			"",
-			"{4A90E2}Что нового:",
-			""
-		}
-
-		for _, change in ipairs(config.lastUpdateInfo.changelog or {}) do
-			table.insert(rows, "{FFFFFF}• " .. tostring(change))
-		end
-
-		table.insert(rows, "")
-		table.insert(rows, "{808080}Telegram-канал:")
-		table.insert(rows, "{4A90E2}t.me/arphelper")
-
-		sampShowDialog(
-			DIALOG_UPDATE,
-			"{4A90E2}Обновление Advance Helper",
-			table.concat(rows, "\n"),
-			"Ок",
-			"",
-			DIALOG_STYLE_MSGBOX
-		)
-
-		config.lastUpdateInfo = nil
-		saveConfig()
-	end
 	
 	lua_thread.create(function()
 		local lastMinute = -1
