@@ -22,10 +22,10 @@ local config = {}
 
 local messages = {}
 
-local helperEnabled
 local repairEnabled
 local fuelEnabled
 local flowersEnabled
+local rentCarId
 local maskSkinId
 local spawnSkinId
 local advertEnabled
@@ -58,10 +58,10 @@ local function defaultConfig()
 		version = "unknown",
 	
         settings = {
-            helper = true,
             repair = true,
             fuel = true,
 			flowers = true,
+			rentCarId = "",
 			maskSkinId = "",
 			spawnSkinId = "",
             advert = false,
@@ -122,10 +122,10 @@ local function saveConfig()
 	config.settings = config.settings or {}
 	config.advert = config.advert or {}
 
-    config.settings.helper = helperEnabled
     config.settings.repair = repairEnabled
     config.settings.fuel = fuelEnabled
 	config.settings.flowers = flowersEnabled
+	config.settings.rentCarId = rentCarId
 	config.settings.maskSkinId = maskSkinId
 	config.settings.spawnSkinId = spawnSkinId
     config.settings.advert = advertEnabled
@@ -151,10 +151,10 @@ end
 
 loadConfig()
 
-helperEnabled = config.settings.helper ~= false
 repairEnabled = config.settings.repair ~= false
 fuelEnabled = config.settings.fuel ~= false
 flowersEnabled = config.settings.flowers ~= false
+rentCarId = tostring(config.settings.rentCarId or "")
 maskSkinId = tostring(config.settings.maskSkinId or "")
 spawnSkinId = tostring(config.settings.spawnSkinId or "")
 advertEnabled = config.settings.advert or false
@@ -180,6 +180,7 @@ local DIALOG_ENVIRONMENT = 5563
 local DIALOG_FOR_TASKS = 5564
 local DIALOG_SKINS = 5560
 local DIALOG_SPAWN_SKIN = 5561
+local DIALOG_RENT_CAR = 5566
 local DIALOG_UPDATE = 5565
 
 local selectedMinute = 0
@@ -206,14 +207,14 @@ end
 local function showMenu()
 	local text = table.concat({
         "{4A90E2}Параметр\tСостояние",
-		"Advance Helper\t" .. status(helperEnabled),
         "{4A90E2}Возможности:",
 		"Автопринятие ремонта (1$)\t" .. status(repairEnabled),
 		"Автопринятие заправки (1 л)\t" .. status(fuelEnabled),
+		"Автоматическая аренда\t" .. (rentCarId ~= "" and "{ffffff}" .. rentCarId or "{FF4444}ВЫКЛ"),
+		"\t",
 		"{4A90E2}Взаимодействия со скинами\t{4A90E2}>>>",
 		"{4A90E2}Возможности для заданий (/tasks)\t{4A90E2}>>>",
 		"{4A90E2}Управление рассылкой\t{4A90E2}>>>",
-		-- "{4A90E2}Управление временем и погодой\t{4A90E2}>>>",
     }, "\n")
 
     sampShowDialog(
@@ -277,6 +278,40 @@ local function showSkinsMenu()
     )
 end
 
+local function startRentProcess()
+    lua_thread.create(function()
+        local target_veh = tonumber(rentCarId)
+        if not target_veh or target_veh < 1 or target_veh > 14 then
+            sampAddChatMessage("{4A90E2}[Advance Helper]{FFFFFF} Ошибка: не корректно выбран ID авто (1-14)", -1)
+            rentActive = false
+            return
+        end
+        
+        sampSendChat("/x")
+        
+        wait(800)
+
+        local forward_clicks = (target_veh - 1) % 14
+        local backward_clicks = (15 - target_veh) % 14
+
+        if forward_clicks <= backward_clicks then
+            for i = 1, forward_clicks do
+                sampSendClickTextdraw(116)
+                wait(200)
+            end
+        else
+            for i = 1, backward_clicks do
+                sampSendClickTextdraw(117)
+                wait(200)
+            end
+        end
+
+        wait(300)
+
+        sampSendClickTextdraw(119)
+    end)
+end
+
 local function isNewerVersion(newVersion, currentVersion)
     local function parse(version)
         local t = {}
@@ -302,7 +337,6 @@ local function showChangelogDialog(info)
     }
 
     for _, change in ipairs(info.changelog or {}) do
-        -- Перекодируем строку из UTF-8 (json) в CP1251 (samp)
         table.insert(rows, "{FFFFFF}• " .. u8:decode(tostring(change)))
     end
 
@@ -356,13 +390,11 @@ local function checkForUpdates()
         file:write(u8:decode(script.text))
         file:close()
 
-        -- Сохраняем в конфиг только новую версию без временных данных
         config.version = data.version
         saveConfig()
 
         sampAddChatMessage(string.format("{4A90E2}Установка обновления Advance Helper завершена. Версия: {FFFFFF}%s", data.version), -1)
 
-        -- Показываем диалог сразу из полученных данных от сервера
         showChangelogDialog(data)
 
         wait(500)
@@ -380,6 +412,58 @@ function onScriptTerminate(script, quitGame)
     end
 end
 
+function buildMessageId(text)
+    local clean = text:gsub("{......}", "")
+
+    local nick = clean:match("^%d+%.%s+([%w_]+)")
+    if not nick then
+        nick = clean:match("^([%w_]+)")
+    end
+
+    local id = tonumber(clean:match("[iI][dD]%s*(%d+)"))
+
+    if not nick or id == nil then
+        return nil
+    end
+
+    local level = sampGetPlayerScore(id)
+    local ping = sampGetPlayerPing(id)
+    local playerColor = sampGetPlayerColor(id)
+
+    local hex = string.format("%06X", bit.band(playerColor, 0xFFFFFF))
+
+    local newText = text
+
+    newText = newText:gsub(
+        nick,
+        string.format("{%s}%s{FFFFFF}", hex, nick),
+        1
+    )
+
+    newText = newText:gsub("id ", "")
+    newText = newText:gsub("%(гол. чат%)", "V")
+    newText = newText:gsub("c Launcher", "Launch")
+    newText = newText:gsub("c Mobile", "Mobile")
+    newText = newText:gsub("%-?%s*тел%.%s*%{%x+}%s*(%d+)", "{ffcc00}[%1]")
+    newText = newText:gsub("%s%s+", " ")
+    newText = newText:gsub("| аккаунт (%d+)", "[%1]")
+
+    newText = string.format(
+        "%s{66CC66} [lvl %d | %d ms]",
+        newText,
+        level,
+        ping
+    )
+
+    return newText
+end
+
+function sampev.onSendCommand(cmd)
+    if cmd:lower():match("^/id") then
+        waitingId = true
+    end
+end
+
 function main()
     repeat
         wait(0)
@@ -393,31 +477,29 @@ function main()
 
     checkForUpdates()
 
-    sampRegisterChatCommand("ahelper", showMenu)
+    sampRegisterChatCommand("ah", showMenu)
+	
+	sampRegisterChatCommand("x", function()
+        if rentCarId == "" then
+			sampSendChat("/x")
+            sampAddChatMessage("{ffff00}Вы можете включить функцию авто-аренды транспорта в {ffffff}/ah", -1)
+            return
+        end
 
-    sampRegisterChatCommand("ah", function()
-        helperEnabled = not helperEnabled
-        saveConfig()
+        if rentActive then
+            sampAddChatMessage("{4A90E2}[Advance Helper]{FFFFFF} Процесс аренды уже запущен!", -1)
+            return
+        end
 
-        sampAddChatMessage(
-            string.format(
-                "{4A90E2}[Advance Helper]{FFFFFF} %s",
-                helperEnabled and "{00CC66}Активирован{FFFFFF}" or "{FF4444}Деактивирован{FFFFFF}"
-            ),
-            -1
-        )
+        rentActive = true
+        startRentProcess()
     end)
 
     sampAddChatMessage(
 		string.format(
-			"{4A90E2}Advance Helper успешно инициализирован. Текущая версия: {FFFFFF}%s",
+			"{4A90E2}Advance Helper успешно инициализирован. Текущая версия: {FFFFFF}%s. {C8C8C8}[Используйте /ah{C8C8C8}]",
 			config.version
 		),
-		-1
-	)
-
-	sampAddChatMessage(
-		"{C8C8C8}Команда управления: {FFFFFF}/ah {C8C8C8}| Панель настроек: {FFFFFF}/ahelper",
 		-1
 	)
 	
@@ -427,7 +509,7 @@ function main()
 		while true do
 			wait(1000)
 			
-			if isSampAvailable() and helperEnabled and advertEnabled then
+			if isSampAvailable() and advertEnabled then
 				if advertNick ~= "" then
 					local _, id = sampGetPlayerIdByCharHandle(PLAYER_PED)
 
@@ -453,7 +535,7 @@ function main()
 					if list and #list > 0 then
 						lua_thread.create(function()
 							for _, msg in ipairs(list) do
-								if not isSampAvailable() or not helperEnabled or not advertEnabled then
+								if not isSampAvailable() or not advertEnabled then
 									break
 								end
 
@@ -487,20 +569,7 @@ function main()
             local changed = false
 
 			if result and button == 1 then
-				if list == 0 then
-					helperEnabled = not helperEnabled
-					saveConfig()
-					changed = true
-
-					sampAddChatMessage(
-						string.format(
-							"{4A90E2}[Advance Helper]{FFFFFF} %s",
-							helperEnabled and "{00CC66}Активирован{FFFFFF}" or "{FF4444}Деактивирован{FFFFFF}"
-						),
-						-1
-					)
-
-				elseif list == 2 then
+				if list == 1 then
 					repairEnabled = not repairEnabled
 					saveConfig()
 					changed = true
@@ -513,7 +582,7 @@ function main()
 						-1
 					)
 
-				elseif list == 3 then
+				elseif list == 2 then
 					fuelEnabled = not fuelEnabled
 					saveConfig()
 					changed = true
@@ -526,17 +595,31 @@ function main()
 						-1
 					)
 					
-				elseif list == 4 then
-					showSkinsMenu()
+				elseif list == 3 then
+					sampShowDialog(
+						DIALOG_RENT_CAR,
+						"{00C853}Выбор транспорта для аренды",
+						"{FFFFFF}Введите порядковый номер авто для автоматической аренды.\n\n" ..
+						"{FFD54F}Список доступного транспорта (1 - 14):{FFFFFF}\n" ..
+						" 1. Faggio       2. Manana      3. Clover\n" ..
+						" 4. Hustler      5. Sadler      6. Hermes\n" ..
+						" 7. Picador      8. Perenniel   9. Tampa\n" ..
+						"10. Majestic    11. Bobcat     12. Glendale\n" ..
+						"13. Slamvan     14. Stallion\n\n" ..
+						"Оставьте поле пустым, чтобы {FF5252}отключить{FFFFFF} авто-аренду.",
+						"Сохранить",
+						"Отмена",
+						DIALOG_STYLE_INPUT
+					)
 					
 				elseif list == 5 then
-					showForTasksMenu()
+					showSkinsMenu()
 					
 				elseif list == 6 then
-					showAdvertMenu()
+					showForTasksMenu()
 					
 				elseif list == 7 then
-					showEnvironmentMenu()
+					showAdvertMenu()
 					
 				end
 				
@@ -846,6 +929,38 @@ function main()
 					showSkinsMenu()
 				end
 			end
+			
+			local result, button, _, input = sampHasDialogRespond(DIALOG_RENT_CAR)
+
+			if result and button == 1 then
+				input = input:gsub("%s+", "")
+
+				if input == "" then
+					rentCarId = ""
+				elseif tonumber(input) then
+					rentCarId = input
+				else
+					sampAddChatMessage(
+						"{4A90E2}[Advance Helper]{FFFFFF} ID авто должен быть числом",
+						-1
+					)
+				end
+
+				if input == "" or tonumber(input) then
+					saveConfig()
+
+					sampAddChatMessage(
+						string.format(
+							"{4A90E2}[Advance Helper]{FFFFFF} Авто для аренды установлен: %s",
+							rentCarId == "" and "{FF4444}ВЫКЛ" or "{4A90E2}" .. rentCarId
+						),
+						-1
+					)
+
+					wait(0)
+					showMenu()
+				end
+			end
         end
     end)
 end
@@ -869,28 +984,76 @@ end
 
 
 function sampev.onShowDialog(id, style, title, button1, button2, text)
+	-- -------------------------------------------------------------
+    -- /x
+    -- -------------------------------------------------------------
+	if rentCarId ~= "" and id == 694 then
+        sampSendDialogResponse(id, 1, -1, "")
+		
+		rentActive = false
+		
+		sampAddChatMessage(
+			string.format("{4A90E2}[Advance Helper]{FFFFFF} Транспорт %s арендован", rentCarId),
+			-1
+		)	
+		
+        return false
+    end
+	
+	-- -------------------------------------------------------------
+    -- /unrent
+    -- -------------------------------------------------------------
+	if rentCarId ~= "" and id == 738 then
+        sampSendDialogResponse(id, 1, -1, "")
+		
+        return false
+    end
+
+	-- -------------------------------------------------------------
+    -- /wanted
+    -- -------------------------------------------------------------
+    if id == 317 then
+        local newLines = {}
+
+        for line in text:gmatch("[^\r\n]+") do
+            local nick = line:match("^([%w_]+)")
+            local player_id = tonumber(line:match("%(id%s*(%d+)%)"))
+
+            if player_id and nick then
+                local level = sampGetPlayerScore(player_id) or 0
+                local playerColor = sampGetPlayerColor(player_id)
+                local hex = string.format("%06X", bit.band(playerColor, 0xFFFFFF))
+
+                -- Заменяем Nick_Name на {HEX}Nick_Name{FFFFFF} [lvl X]
+                local coloredNickWithLvl = string.format("{%s}%s{FFFFFF} {66CC66}[lvl %d]{FFFFFF}", hex, nick, level)
+                
+                line = line:gsub(nick, coloredNickWithLvl, 1)
+            end
+
+            table.insert(newLines, line)
+        end
+
+        return {
+            id,
+            style,
+            title,
+            button1,
+            button2,
+            table.concat(newLines, "\n")
+        }
+    end
+
+    -- -------------------------------------------------------------
+	-- /mm
+	-- -------------------------------------------------------------
     if id ~= 27 then return end
 
     local count = 0
-    for _ in (text .. "\n"):gmatch("(.-)\n") do
-        count = count + 1
-    end
-
+    for _ in (text .. "\n"):gmatch("(.-)\n") do count = count + 1 end
     playerMenuLastItem = count
 
-    text = text .. string.format(
-		"\n{4A90E2}%d. Настройки Advance Helper",
-		playerMenuLastItem + 1
-	)
-
-    return {
-        id,
-        style,
-        title,
-        button1,
-        button2,
-        text
-    }
+    text = text .. string.format("\n{4A90E2}%d. Настройки Advance Helper", playerMenuLastItem + 1)
+    return { id, style, title, button1, button2, text }
 end
 
 function sampev.onSendDialogResponse(id, button, listitem, input)
@@ -907,10 +1070,72 @@ function sampev.onSendDialogResponse(id, button, listitem, input)
 end
 
 function sampev.onServerMessage(color, text)
-    if not helperEnabled then
-        return
+	-- -------------------------------------------------------------
+    -- stop /x cycle if unrent
+    -- -------------------------------------------------------------
+	local unrent_msg = text:match("чтобы разорвать текущий договор аренды")
+	if rentCarId ~= "" and unrent_msg then
+        rentActive = false
+		
+		sampAddChatMessage(
+			string.format(
+				"{ffff00}Отмените текущую аренду транспорта с помощью команды {FFFFFF}/unrent"
+			),
+			-1
+		)
+		
+        return false
     end
+
 	
+	local clean = text:gsub("{......}", "")
+	
+	-- -------------------------------------------------------------
+	-- /setmark
+	-- -------------------------------------------------------------
+	local wanted_id = text:match("%[(%d+)%].-был обнаружен")
+    if wanted_id then
+        autoIdRequest = true
+        lua_thread.create(function()
+            wait(100)
+            sampSendChat("/id " .. wanted_id)
+        end)
+    end
+
+	-- -------------------------------------------------------------
+	-- /id
+	-- -------------------------------------------------------------
+	if waitingId then
+		if clean:find("Использование команды:") 
+			or clean:find("Совпадений не найдено") 
+			or clean:find("Поиск id игрока:") 
+			or clean:find("Поиск ника игрока:") then
+			
+			waitingId = false
+			return
+		end
+
+		if clean:match("^[%w_]+%s+[iI][dD]%s*%d+") or clean:match("^%d+%.%s+[%w_]+%s+[iI][dD]%s*%d+") then
+			local newText = buildMessageId(text)
+			
+			if not clean:match("^%d+%.") then
+				waitingId = false
+			end
+
+			if newText then
+				return { color, newText }
+			end
+		end
+
+		if clean:find("Показаны первые") then
+			waitingId = false
+			return
+		end
+	end
+	
+	-- -------------------------------------------------------------
+	-- skin after mask
+    -- -------------------------------------------------------------
 	do
 		if text:find("^Вы надели маску") and maskSkinId ~= "" then
 			lua_thread.create(function()
@@ -943,7 +1168,6 @@ function sampev.onServerMessage(color, text)
         end
     end
 
-    -- ????????
     do
         local nick, liters = text:match("^(%S+) предлагает заправить Ваш транспорт на (%d+) л за %d+%$")
 
