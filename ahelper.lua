@@ -51,7 +51,7 @@ end
 
 local download_status = require("moonloader").download_status	
 
-local UPDATE_URL = "https://raw.githubusercontent.com/freimaurerey/Advance-Helper/main/version.json" .. tostring(os.clock())
+local UPDATE_URL = "https://raw.githubusercontent.com/freimaurerey/Advance-Helper/main/version.json?t=" .. tostring(os.clock())
 
 local function defaultConfig()
     return {
@@ -356,17 +356,20 @@ end
 
 local function checkForUpdates()
     lua_thread.create(function()
-
+        local urlWithCacheBust = UPDATE_URL .. "?t=" .. os.time()
+        
         local jsonPath = os.tmpname()
+        if doesFileExist(jsonPath) then os.remove(jsonPath) end
 
-        downloadUrlToFile(UPDATE_URL, jsonPath, function(_, status)
-
-            if status ~= download_status.STATUSEX_ENDDOWNLOAD then
+        downloadUrlToFile(urlWithCacheBust, jsonPath, function(_, status)
+            if status ~= download_status.STATUS_ENDDOWNLOADDATA and status ~= download_status.STATUSEX_ENDDOWNLOAD then
                 return
             end
 
             local file = io.open(jsonPath, "r")
             if not file then
+                if doesFileExist(jsonPath) then os.remove(jsonPath) end
+                sampAddChatMessage("{4A90E2}Не удалось получить информацию об обновлении", -1)
                 return
             end
 
@@ -375,7 +378,8 @@ local function checkForUpdates()
             os.remove(jsonPath)
 
             local data, _, err = json.decode(text)
-            if err or type(data) ~= "table" then
+            if err or type(data) ~= "table" or not data.version or not data.script then
+                sampAddChatMessage("{4A90E2}Ошибка обработки данных обновления", -1)
                 return
             end
 
@@ -386,48 +390,67 @@ local function checkForUpdates()
             end
 
             if not isNewerVersion(data.version, config.version) then
-                sampAddChatMessage("{4A90E2}Обновлений не обнаружено. Используется актуальная версия Advance Helper", -1)
+                sampAddChatMessage("{4A90E2}Используется актуальная версия Advance Helper", -1)
                 return
             end
 
             sampAddChatMessage(
-                string.format(
-                    "{4A90E2}Доступно обновление Advance Helper до версии {FFFFFF}%s{4A90E2}. Начинается загрузка",
-                    data.version
-                ),
+                string.format("{4A90E2}Доступно обновление до v%s. Начинается загрузка...", data.version),
                 -1
             )
 
-            downloadUrlToFile(data.script, thisScript().path, function(_, status2)
+            lua_thread.create(function()
+                wait(150)
 
-                if status2 == download_status.STATUS_ENDDOWNLOADDATA then
+                local tempScriptPath = os.tmpname()
+                if doesFileExist(tempScriptPath) then os.remove(tempScriptPath) end
 
-                    config.version = data.version
-                    saveConfig()
+                local downloadSuccess = false
 
-                    sampAddChatMessage(
-                        string.format(
-                            "{4A90E2}Установка обновления Advance Helper завершена. Версия: {FFFFFF}%s",
-                            data.version
-                        ),
-                        -1
-                    )
+                downloadUrlToFile(data.script, tempScriptPath, function(_, status2)
+                    if status2 == download_status.STATUS_ENDDOWNLOADDATA then
+                        downloadSuccess = true
+                        
+                        local downloadedFile = io.open(tempScriptPath, "rb")
+                        if downloadedFile then
+                            local scriptContent = downloadedFile:read("*a")
+                            downloadedFile:close()
+                            os.remove(tempScriptPath)
 
-                    showChangelogDialog(data)
+                            if #scriptContent > 0 then
+                                local currentScriptFile = io.open(thisScript().path, "wb")
+                                if currentScriptFile then
+                                    currentScriptFile:write(scriptContent)
+                                    currentScriptFile:close()
 
-                    lua_thread.create(function()
-                        wait(500)
-                        thisScript():reload()
-                    end)
+                                    config.version = data.version
+                                    saveConfig()
 
-                elseif status2 == download_status.STATUSEX_ENDDOWNLOAD then
-                    sampAddChatMessage("{4A90E2}Не удалось загрузить обновление Advance Helper", -1)
-                end
+                                    sampAddChatMessage(
+                                        string.format("{4A90E2}Обновление до v%s успешно установлено!", data.version),
+                                        -1
+                                    )
 
+                                    showChangelogDialog(data)
+
+                                    lua_thread.create(function()
+                                        wait(500)
+                                        thisScript():reload()
+                                    end)
+                                    return
+                                end
+                            end
+                        end
+
+                        sampAddChatMessage("{4A90E2}Ошибка при сохранении файла обновления", -1)
+
+                    elseif status2 == download_status.STATUSEX_ENDDOWNLOAD and not downloadSuccess then
+                        if doesFileExist(tempScriptPath) then os.remove(tempScriptPath) end
+                        sampAddChatMessage("{4A90E2}Не удалось скачать файл обновления. Попробуйте позже", -1)
+                    end
+                end)
             end)
-
         end)
-
     end)
 end
 
