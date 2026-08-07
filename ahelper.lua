@@ -2,6 +2,32 @@ local encoding = require 'encoding'
 encoding.default = 'CP1251'
 local u8 = encoding.UTF8
 
+local function utf8_to_cp1251(str)
+    local charmap = {
+        [208] = {[129]=168,[144]=192,[145]=193,[146]=194,[147]=195,[148]=196,[149]=197,[150]=198,[151]=199,[152]=200,[153]=201,[154]=202,[155]=203,[156]=204,[157]=205,[158]=206,[159]=207,[160]=208,[161]=209,[162]=210,[163]=211,[164]=212,[165]=213,[166]=214,[167]=215,[168]=216,[169]=217,[170]=218,[171]=219,[172]=220,[173]=221,[174]=222,[175]=223,[176]=224,[177]=225,[178]=226,[179]=227,[180]=228,[181]=229,[182]=230,[183]=231,[184]=232,[185]=233,[186]=234,[187]=235,[188]=236,[189]=237,[190]=238,[191]=239},
+        [209] = {[128]=240,[129]=241,[130]=242,[131]=243,[132]=244,[133]=245,[134]=246,[135]=247,[136]=248,[137]=249,[138]=250,[139]=251,[140]=252,[141]=253,[142]=254,[143]=255,[145]=184}
+    }
+    local res = {}
+    local i = 1
+    while i <= #str do
+        local c1 = str:byte(i)
+        if charmap[c1] and i < #str then
+            local c2 = str:byte(i + 1)
+            if charmap[c1][c2] then
+                table.insert(res, string.char(charmap[c1][c2]))
+                i = i + 2
+            else
+                table.insert(res, string.char(c1))
+                i = i + 1
+            end
+        else
+            table.insert(res, string.char(c1))
+            i = i + 1
+        end
+    end
+    return table.concat(res)
+end
+
 script_name("Advance Helper")
 script_author("Louis_Montblanc")
 
@@ -337,6 +363,7 @@ local function showChangelogDialog(info)
     }
 
     for _, change in ipairs(info.changelog or {}) do
+        -- Переводим UTF-8 текст из JSON в CP1251 для SAMP
         local changeText = u8:decode(tostring(change))
         table.insert(rows, "{FFFFFF}• " .. changeText)
     end
@@ -353,32 +380,6 @@ local function showChangelogDialog(info)
         "",
         DIALOG_STYLE_MSGBOX
     )
-end
-
-local function utf8_to_cp1251(str)
-    local charmap = {
-        [208] = {[129]=168,[144]=192,[145]=193,[146]=194,[147]=195,[148]=196,[149]=197,[150]=198,[151]=199,[152]=200,[153]=201,[154]=202,[155]=203,[156]=204,[157]=205,[158]=206,[159]=207,[160]=208,[161]=209,[162]=210,[163]=211,[164]=212,[165]=213,[166]=214,[167]=215,[168]=216,[169]=217,[170]=218,[171]=219,[172]=220,[173]=221,[174]=222,[175]=223,[176]=224,[177]=225,[178]=226,[179]=227,[180]=228,[181]=229,[182]=230,[183]=231,[184]=232,[185]=233,[186]=234,[187]=235,[188]=236,[189]=237,[190]=238,[191]=239},
-        [209] = {[128]=240,[129]=241,[130]=242,[131]=243,[132]=244,[133]=245,[134]=246,[135]=247,[136]=248,[137]=249,[138]=250,[139]=251,[140]=252,[141]=253,[142]=254,[143]=255,[145]=184}
-    }
-    local res = {}
-    local i = 1
-    while i <= #str do
-        local c1 = str:byte(i)
-        if charmap[c1] and i < #str then
-            local c2 = str:byte(i + 1)
-            if charmap[c1][c2] then
-                table.insert(res, string.char(charmap[c1][c2]))
-                i = i + 2
-            else
-                table.insert(res, string.char(c1))
-                i = i + 1
-            end
-        else
-            table.insert(res, string.char(c1))
-            i = i + 1
-        end
-    end
-    return table.concat(res)
 end
 
 local isCheckingUpdate = false
@@ -406,7 +407,8 @@ local function checkForUpdates()
                 file:close()
                 if doesFileExist(jsonPath) then os.remove(jsonPath) end
 
-                local data, _, err = json.decode(u8(text))
+                -- ИСПРАВЛЕНО: Читаем чистый UTF-8 текст (БЕЗ обертки u8())
+                local data, _, err = json.decode(text)
                 if err or type(data) ~= "table" or not data.version or not data.script then
                     isCheckingUpdate = false
                     return
@@ -420,7 +422,7 @@ local function checkForUpdates()
                 end
 
                 if not isNewerVersion(data.version, config.version) then
-                    sampAddChatMessage("{4A90E2}Обновлений не обнаружено. Используется актуальная версия Advance Helper", -1)
+                    sampAddChatMessage("{4A90E2}Обновлений не обнаружено. Используется актуальная версия скрипта", -1)
                     isCheckingUpdate = false
                     return
                 end
@@ -442,7 +444,8 @@ local function checkForUpdates()
                                 if doesFileExist(tempScriptPath) then os.remove(tempScriptPath) end
 
                                 if #scriptContent > 0 then
-									scriptContent = utf8_to_cp1251(scriptContent)
+                                    -- Используем встроенную функцию библиотеки encoding для скачанного скрипта
+                                    scriptContent = u8:decode(scriptContent)
 
                                     local currentScriptFile = io.open(thisScript().path, "wb")
                                     if currentScriptFile then
