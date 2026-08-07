@@ -354,6 +354,32 @@ local function showChangelogDialog(info)
     )
 end
 
+local function u8_to_1251(str)
+    local charmap = {
+        [208] = {[129]=168,[144]=192,[145]=193,[146]=194,[147]=195,[148]=196,[149]=197,[150]=198,[151]=199,[152]=200,[153]=201,[154]=202,[155]=203,[156]=204,[157]=205,[158]=206,[159]=207,[160]=208,[161]=209,[162]=210,[163]=211,[164]=212,[165]=213,[166]=214,[167]=215,[168]=216,[169]=217,[170]=218,[171]=219,[172]=220,[173]=221,[174]=222,[175]=223,[176]=224,[177]=225,[178]=226,[179]=227,[180]=228,[181]=229,[182]=230,[183]=231,[184]=232,[185]=233,[186]=234,[187]=235,[188]=236,[189]=237,[190]=238,[191]=239},
+        [209] = {[128]=240,[129]=241,[130]=242,[131]=243,[132]=244,[133]=245,[134]=246,[135]=247,[136]=248,[137]=249,[138]=250,[139]=251,[140]=252,[141]=253,[142]=254,[143]=255,[145]=184}
+    }
+    local res = {}
+    local i = 1
+    while i <= #str do
+        local c1 = str:byte(i)
+        if charmap[c1] and i < #str then
+            local c2 = str:byte(i + 1)
+            if charmap[c1][c2] then
+                table.insert(res, string.char(charmap[c1][c2]))
+                i = i + 2
+            else
+                table.insert(res, string.char(c1))
+                i = i + 1
+            end
+        else
+            table.insert(res, string.char(c1))
+            i = i + 1
+        end
+    end
+    return table.concat(res)
+end
+
 local function checkForUpdates()
     lua_thread.create(function()
         local urlWithCacheBust = UPDATE_URL .. "?t=" .. os.time()
@@ -362,94 +388,95 @@ local function checkForUpdates()
         if doesFileExist(jsonPath) then os.remove(jsonPath) end
 
         downloadUrlToFile(urlWithCacheBust, jsonPath, function(_, status)
-            if status ~= download_status.STATUS_ENDDOWNLOADDATA and status ~= download_status.STATUSEX_ENDDOWNLOAD then
-                return
-            end
+            -- Обрабатываем ТОЛЬКО финальный статус скачивания
+            if status == download_status.STATUS_ENDDOWNLOADDATA then
+                local file = io.open(jsonPath, "r")
+                if not file then
+                    if doesFileExist(jsonPath) then os.remove(jsonPath) end
+                    sampAddChatMessage("{4A90E2}Не удалось открыть файл конфигурации обновления", -1)
+                    return
+                end
 
-            local file = io.open(jsonPath, "r")
-            if not file then
+                local text = file:read("*a")
+                file:close()
                 if doesFileExist(jsonPath) then os.remove(jsonPath) end
-                sampAddChatMessage("{4A90E2}Не удалось получить информацию об обновлении", -1)
-                return
-            end
 
-            local text = file:read("*a")
-            file:close()
-            os.remove(jsonPath)
+                local data, _, err = json.decode(text)
+                if err or type(data) ~= "table" or not data.version or not data.script then
+                    sampAddChatMessage("{4A90E2}Ошибка обработки данных обновления", -1)
+                    return
+                end
 
-            local data, _, err = json.decode(text)
-            if err or type(data) ~= "table" or not data.version or not data.script then
-                sampAddChatMessage("{4A90E2}Ошибка обработки данных обновления", -1)
-                return
-            end
+                if config.version == "unknown" then
+                    config.version = data.version
+                    saveConfig()
+                    return
+                end
 
-            if config.version == "unknown" then
-                config.version = data.version
-                saveConfig()
-                return
-            end
+                if not isNewerVersion(data.version, config.version) then
+                    sampAddChatMessage("{4A90E2}Используется актуальная версия Advance Helper", -1)
+                    return
+                end
 
-            if not isNewerVersion(data.version, config.version) then
-                sampAddChatMessage("{4A90E2}Используется актуальная версия Advance Helper", -1)
-                return
-            end
+                sampAddChatMessage(
+                    string.format("{4A90E2}Доступно обновление до v%s. Начинается загрузка...", data.version),
+                    -1
+                )
 
-            sampAddChatMessage(
-                string.format("{4A90E2}Доступно обновление до v%s. Начинается загрузка...", data.version),
-                -1
-            )
+                lua_thread.create(function()
+                    wait(200)
 
-            lua_thread.create(function()
-                wait(150)
+                    local tempScriptPath = os.tmpname()
+                    if doesFileExist(tempScriptPath) then os.remove(tempScriptPath) end
 
-                local tempScriptPath = os.tmpname()
-                if doesFileExist(tempScriptPath) then os.remove(tempScriptPath) end
+                    downloadUrlToFile(data.script, tempScriptPath, function(_, status2)
+                        if status2 == download_status.STATUS_ENDDOWNLOADDATA then
+                            local downloadedFile = io.open(tempScriptPath, "rb")
+                            if downloadedFile then
+                                local scriptContent = downloadedFile:read("*a")
+                                downloadedFile:close()
+                                if doesFileExist(tempScriptPath) then os.remove(tempScriptPath) end
 
-                local downloadSuccess = false
+                                if #scriptContent > 0 then
+                                    scriptContent = u8_to_1251(scriptContent)
 
-                downloadUrlToFile(data.script, tempScriptPath, function(_, status2)
-                    if status2 == download_status.STATUS_ENDDOWNLOADDATA then
-                        downloadSuccess = true
-                        
-                        local downloadedFile = io.open(tempScriptPath, "rb")
-                        if downloadedFile then
-                            local scriptContent = downloadedFile:read("*a")
-                            downloadedFile:close()
-                            os.remove(tempScriptPath)
+                                    local currentScriptFile = io.open(thisScript().path, "wb")
+                                    if currentScriptFile then
+                                        currentScriptFile:write(scriptContent)
+                                        currentScriptFile:close()
 
-                            if #scriptContent > 0 then
-                                local currentScriptFile = io.open(thisScript().path, "wb")
-                                if currentScriptFile then
-                                    currentScriptFile:write(scriptContent)
-                                    currentScriptFile:close()
+                                        config.version = data.version
+                                        saveConfig()
 
-                                    config.version = data.version
-                                    saveConfig()
+                                        sampAddChatMessage(
+                                            string.format("{4A90E2}Обновление до v%s успешно установлено!", data.version),
+                                            -1
+                                        )
 
-                                    sampAddChatMessage(
-                                        string.format("{4A90E2}Обновление до v%s успешно установлено!", data.version),
-                                        -1
-                                    )
+                                        showChangelogDialog(data)
 
-                                    showChangelogDialog(data)
-
-                                    lua_thread.create(function()
-                                        wait(500)
-                                        thisScript():reload()
-                                    end)
-                                    return
+                                        lua_thread.create(function()
+                                            wait(500)
+                                            thisScript():reload()
+                                        end)
+                                        return
+                                    end
                                 end
                             end
+
+                            sampAddChatMessage("{4A90E2}Ошибка при сохранении файла обновления", -1)
+
+                        elseif status2 == download_status.STATUSEX_ENDDOWNLOAD then
+                            if doesFileExist(tempScriptPath) then os.remove(tempScriptPath) end
+                            sampAddChatMessage("{4A90E2}Не удалось скачать файл обновления (Ошибка сети)", -1)
                         end
-
-                        sampAddChatMessage("{4A90E2}Ошибка при сохранении файла обновления", -1)
-
-                    elseif status2 == download_status.STATUSEX_ENDDOWNLOAD and not downloadSuccess then
-                        if doesFileExist(tempScriptPath) then os.remove(tempScriptPath) end
-                        sampAddChatMessage("{4A90E2}Не удалось скачать файл обновления. Попробуйте позже", -1)
-                    end
+                    end)
                 end)
-            end)
+
+            elseif status == download_status.STATUSEX_ENDDOWNLOAD then
+                if doesFileExist(jsonPath) then os.remove(jsonPath) end
+                sampAddChatMessage("{4A90E2}Не удалось получить информацию об обновлении (Сервер недоступен)", -1)
+            end
         end)
     end)
 end
