@@ -49,9 +49,9 @@ local function join(tbl)
     return table.concat(tbl or {}, "|")
 end
 
-local requests = require("requests")
+local download_status = require("moonloader").download_status	
 
-local UPDATE_URL = "https://raw.githubusercontent.com/freimaurerey/Advance-Helper/main/version.json"
+local UPDATE_URL = "https://raw.githubusercontent.com/freimaurerey/Advance-Helper/main/version.json" .. tostring(os.clock())
 
 local function defaultConfig()
     return {
@@ -356,49 +356,78 @@ end
 
 local function checkForUpdates()
     lua_thread.create(function()
-        local ok, response = pcall(requests.get, UPDATE_URL)
-        if not ok or not response or response.status_code ~= 200 then return end
 
-        local data, _, err = json.decode(response.text)
-        if err or type(data) ~= "table" then return end
+        local jsonPath = os.tmpname()
 
-        if config.version == "unknown" then
-            config.version = data.version
-            saveConfig()
-            return
-        end
-        
-        if not isNewerVersion(data.version, config.version) then
-            sampAddChatMessage("{4A90E2}Обновлений не обнаружено. Используется актуальная версия Advance Helper", -1)
-            return
-        end
+        downloadUrlToFile(UPDATE_URL, jsonPath, function(_, status)
 
-        sampAddChatMessage(string.format("{4A90E2}Доступно обновление Advance Helper до версии {FFFFFF}%s{4A90E2}. Начинается загрузка", data.version), -1)
+            if status ~= download_status.STATUSEX_ENDDOWNLOAD then
+                return
+            end
 
-        local ok2, script = pcall(requests.get, data.script)
-        if not ok2 or not script or script.status_code ~= 200 then
-            sampAddChatMessage("{4A90E2}Не удалось загрузить обновление Advance Helper", -1)
-            return
-        end
+            local file = io.open(jsonPath, "r")
+            if not file then
+                return
+            end
 
-        local file = io.open(thisScript().path, "wb")
-        if not file then
-            sampAddChatMessage("{4A90E2}Не удалось открыть файл скрипта для обновления Advance Helper", -1)
-            return
-        end
+            local text = file:read("*a")
+            file:close()
+            os.remove(jsonPath)
 
-        file:write(u8:decode(script.text))
-        file:close()
+            local data, _, err = json.decode(text)
+            if err or type(data) ~= "table" then
+                return
+            end
 
-        config.version = data.version
-        saveConfig()
+            if config.version == "unknown" then
+                config.version = data.version
+                saveConfig()
+                return
+            end
 
-        sampAddChatMessage(string.format("{4A90E2}Установка обновления Advance Helper завершена. Версия: {FFFFFF}%s", data.version), -1)
+            if not isNewerVersion(data.version, config.version) then
+                sampAddChatMessage("{4A90E2}Обновлений не обнаружено. Используется актуальная версия Advance Helper", -1)
+                return
+            end
 
-        showChangelogDialog(data)
+            sampAddChatMessage(
+                string.format(
+                    "{4A90E2}Доступно обновление Advance Helper до версии {FFFFFF}%s{4A90E2}. Начинается загрузка",
+                    data.version
+                ),
+                -1
+            )
 
-        wait(500)
-        thisScript():reload()
+            downloadUrlToFile(data.script, thisScript().path, function(_, status2)
+
+                if status2 == download_status.STATUS_ENDDOWNLOADDATA then
+
+                    config.version = data.version
+                    saveConfig()
+
+                    sampAddChatMessage(
+                        string.format(
+                            "{4A90E2}Установка обновления Advance Helper завершена. Версия: {FFFFFF}%s",
+                            data.version
+                        ),
+                        -1
+                    )
+
+                    showChangelogDialog(data)
+
+                    lua_thread.create(function()
+                        wait(500)
+                        thisScript():reload()
+                    end)
+
+                elseif status2 == download_status.STATUSEX_ENDDOWNLOAD then
+                    sampAddChatMessage("{4A90E2}Не удалось загрузить обновление Advance Helper", -1)
+                end
+
+            end)
+
+        end)
+
     end)
 end
 
