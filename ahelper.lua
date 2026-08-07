@@ -390,7 +390,6 @@ local function checkForUpdates()
         local jsonPath = os.tmpname()
         if doesFileExist(jsonPath) then os.remove(jsonPath) end
 
-        -- Добавляем timestamp к URL против кэширования сервера
         local urlWithCache = UPDATE_URL .. "?t=" .. os.time()
 
         downloadUrlToFile(urlWithCache, jsonPath, function(_, status)
@@ -406,7 +405,6 @@ local function checkForUpdates()
                 file:close()
                 if doesFileExist(jsonPath) then os.remove(jsonPath) end
 
-                -- Читаем JSON через UTF-8 декодер
                 local data, _, err = json.decode(u8(text))
                 if err or type(data) ~= "table" or not data.version or not data.script then
                     isCheckingUpdate = false
@@ -421,17 +419,13 @@ local function checkForUpdates()
                 end
 
                 if not isNewerVersion(data.version, config.version) then
-                    sampAddChatMessage("{4A90E2}Используется актуальная версия Advance Helper", -1)
+                    sampAddChatMessage("{4A90E2}Обновлений не обнаружено. Используется актуальная версия Advance Helper", -1)
                     isCheckingUpdate = false
                     return
                 end
 
-                sampAddChatMessage(
-                    string.format("{4A90E2}Доступно обновление до v%s. Начинается загрузка...", data.version),
-                    -1
-                )
+                sampAddChatMessage(string.format("{4A90E2}Доступно обновление до версии {FFFFFF}%s{4A90E2}. Начинается загрузка", data.version), -1)
 
-                -- Разгружаем сетевой поток с помощью микропаузы
                 lua_thread.create(function()
                     wait(200)
 
@@ -457,10 +451,7 @@ local function checkForUpdates()
                                         config.version = data.version
                                         saveConfig()
 
-                                        sampAddChatMessage(
-                                            string.format("{4A90E2}Обновление до v%s успешно установлено!", data.version),
-                                            -1
-                                        )
+                                        sampAddChatMessage(string.format("{4A90E2}Установка обновления завершена. Версия: {FFFFFF}%s", data.version), -1)
 
                                         showChangelogDialog(data)
 
