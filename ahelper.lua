@@ -337,7 +337,7 @@ local function showChangelogDialog(info)
     }
 
     for _, change in ipairs(info.changelog or {}) do
-        table.insert(rows, "{FFFFFF}• " .. u8:decode(tostring(change)))
+        table.insert(rows, "{FFFFFF}• " .. tostring(change))
     end
 
     table.insert(rows, "")
