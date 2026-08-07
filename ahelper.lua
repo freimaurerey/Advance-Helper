@@ -1,6 +1,6 @@
-local encoding = require "encoding"
-encoding.default = "CP1251"
-u8 = encoding.UTF8
+local encoding = require 'encoding'
+encoding.default = 'CP1251'
+local u8 = encoding.UTF8
 
 script_name("Advance Helper")
 script_author("Louis_Montblanc")
@@ -354,46 +354,25 @@ local function showChangelogDialog(info)
     )
 end
 
-local function u8_to_1251(str)
-    local charmap = {
-        [208] = {[129]=168,[144]=192,[145]=193,[146]=194,[147]=195,[148]=196,[149]=197,[150]=198,[151]=199,[152]=200,[153]=201,[154]=202,[155]=203,[156]=204,[157]=205,[158]=206,[159]=207,[160]=208,[161]=209,[162]=210,[163]=211,[164]=212,[165]=213,[166]=214,[167]=215,[168]=216,[169]=217,[170]=218,[171]=219,[172]=220,[173]=221,[174]=222,[175]=223,[176]=224,[177]=225,[178]=226,[179]=227,[180]=228,[181]=229,[182]=230,[183]=231,[184]=232,[185]=233,[186]=234,[187]=235,[188]=236,[189]=237,[190]=238,[191]=239},
-        [209] = {[128]=240,[129]=241,[130]=242,[131]=243,[132]=244,[133]=245,[134]=246,[135]=247,[136]=248,[137]=249,[138]=250,[139]=251,[140]=252,[141]=253,[142]=254,[143]=255,[145]=184}
-    }
-    local res = {}
-    local i = 1
-    while i <= #str do
-        local c1 = str:byte(i)
-        if charmap[c1] and i < #str then
-            local c2 = str:byte(i + 1)
-            if charmap[c1][c2] then
-                table.insert(res, string.char(charmap[c1][c2]))
-                i = i + 2
-            else
-                table.insert(res, string.char(c1))
-                i = i + 1
-            end
-        else
-            table.insert(res, string.char(c1))
-            i = i + 1
-        end
-    end
-    return table.concat(res)
-end
+local isCheckingUpdate = false
 
 local function checkForUpdates()
+    if isCheckingUpdate then return end
+    isCheckingUpdate = true
+
     lua_thread.create(function()
-        local urlWithCacheBust = UPDATE_URL .. "?t=" .. os.time()
-        
         local jsonPath = os.tmpname()
         if doesFileExist(jsonPath) then os.remove(jsonPath) end
 
-        downloadUrlToFile(urlWithCacheBust, jsonPath, function(_, status)
-            -- Обрабатываем ТОЛЬКО финальный статус скачивания
+        -- Добавляем timestamp к URL против кэширования сервера
+        local urlWithCache = UPDATE_URL .. "?t=" .. os.time()
+
+        downloadUrlToFile(urlWithCache, jsonPath, function(_, status)
             if status == download_status.STATUS_ENDDOWNLOADDATA then
                 local file = io.open(jsonPath, "r")
                 if not file then
                     if doesFileExist(jsonPath) then os.remove(jsonPath) end
-                    sampAddChatMessage("{4A90E2}Не удалось открыть файл конфигурации обновления", -1)
+                    isCheckingUpdate = false
                     return
                 end
 
@@ -401,20 +380,23 @@ local function checkForUpdates()
                 file:close()
                 if doesFileExist(jsonPath) then os.remove(jsonPath) end
 
-                local data, _, err = json.decode(text)
+                -- Читаем JSON через UTF-8 декодер
+                local data, _, err = json.decode(u8(text))
                 if err or type(data) ~= "table" or not data.version or not data.script then
-                    sampAddChatMessage("{4A90E2}Ошибка обработки данных обновления", -1)
+                    isCheckingUpdate = false
                     return
                 end
 
                 if config.version == "unknown" then
                     config.version = data.version
                     saveConfig()
+                    isCheckingUpdate = false
                     return
                 end
 
                 if not isNewerVersion(data.version, config.version) then
                     sampAddChatMessage("{4A90E2}Используется актуальная версия Advance Helper", -1)
+                    isCheckingUpdate = false
                     return
                 end
 
@@ -423,6 +405,7 @@ local function checkForUpdates()
                     -1
                 )
 
+                -- Разгружаем сетевой поток с помощью микропаузы
                 lua_thread.create(function()
                     wait(200)
 
@@ -438,8 +421,6 @@ local function checkForUpdates()
                                 if doesFileExist(tempScriptPath) then os.remove(tempScriptPath) end
 
                                 if #scriptContent > 0 then
-                                    scriptContent = u8_to_1251(scriptContent)
-
                                     local currentScriptFile = io.open(thisScript().path, "wb")
                                     if currentScriptFile then
                                         currentScriptFile:write(scriptContent)
@@ -465,17 +446,10 @@ local function checkForUpdates()
                             end
 
                             sampAddChatMessage("{4A90E2}Ошибка при сохранении файла обновления", -1)
-
-                        elseif status2 == download_status.STATUSEX_ENDDOWNLOAD then
-                            if doesFileExist(tempScriptPath) then os.remove(tempScriptPath) end
-                            sampAddChatMessage("{4A90E2}Не удалось скачать файл обновления (Ошибка сети)", -1)
+                            isCheckingUpdate = false
                         end
                     end)
                 end)
-
-            elseif status == download_status.STATUSEX_ENDDOWNLOAD then
-                if doesFileExist(jsonPath) then os.remove(jsonPath) end
-                sampAddChatMessage("{4A90E2}Не удалось получить информацию об обновлении (Сервер недоступен)", -1)
             end
         end)
     end)
