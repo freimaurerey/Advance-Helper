@@ -1,5 +1,5 @@
 {
-    "version": "1.2.0",
+    "version": "1.2.1",
     "script": "https://raw.githubusercontent.com/freimaurerey/Advance-Helper/main/ahelper.luac",
     "changelog": [
         "Подсказки в /tasks",
