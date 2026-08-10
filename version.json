@@ -1,5 +1,5 @@
 {
-    "version": "1.2.4",
+    "version": "1.2.5",
     "script": "https://raw.githubusercontent.com/freimaurerey/Advance-Helper/main/ahelper.luac",
     "changelog": [
         "Система автоугона (/ug)",
